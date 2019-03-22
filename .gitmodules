@@ -1,0 +1,4 @@
+[submodule "area8051"]
+	path = area8051
+	url = https://gitlab.redox-os.org/redox-os/area8051.git
+	branch = master

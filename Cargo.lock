@@ -1,0 +1,11 @@
+[[package]]
+name = "area8051"
+version = "0.1.0"
+
+[[package]]
+name = "ecsim"
+version = "0.1.0"
+dependencies = [
+ "area8051 0.1.0",
+]
+
