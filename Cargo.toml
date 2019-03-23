@@ -9,5 +9,4 @@ area8051 = { path = "area8051" }
 
 [features]
 default = ["debug_xram"]
-debug_iram = []
 debug_xram = []
