@@ -8,5 +8,7 @@ edition = "2018"
 area8051 = { path = "area8051" }
 
 [features]
-default = ["debug_xram"]
+default = ["debug_spi", "debug_xram"]
+debug = ["area8051/debug"]
+debug_spi = []
 debug_xram = []

@@ -1,4 +1,4 @@
-use area8051::{Addr, Mcu, Mem};
+use area8051::{Addr, Mem};
 
 use crate::Ec;
 
@@ -9,12 +9,13 @@ macro_rules! debug {
 
 #[cfg(not(feature = "debug_xram"))]
 macro_rules! debug {
-    ($($arg:tt)*) => ();
+    ($($arg:tt)*) => (());
 }
 
 pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
     let mut mcu = ec.mcu.lock().unwrap();
     let mut spi = ec.spi.lock().unwrap();
+    let mut xmem = ec.xmem.lock().unwrap();
 
     debug!("\n[xram 0x{:04X}", address);
 
@@ -78,7 +79,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                     let flash = match (a3 >> 6) & 0b11 {
                         0b00 | 0b11 => {
                             debug!(" (external)");
-                            &mut spi.flash
+                            &mut xmem
                         },
                         0b01 => {
                             debug!(" (internal)");
@@ -91,7 +92,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                     debug!("]");
 
                     if a3 & 0xF == 0xF {
-                        panic!("flash follow not supported: {:?}", new_opt);
+                        match a1 {
+                            0xFD => {
+                                // Enable chip, send or receive
+                                debug!(" [follow enable]");
+                                if let Some(new) = new_opt {
+                                    spi.input.push_back(new);
+                                } else {
+                                    spi.step(flash);
+                                    old = spi.output.pop_front().expect("tried to read missing flash follow output");
+                                }
+                            },
+                            0xFE => {
+                                // Disable chip
+                                debug!(" [follow disable]");
+                                spi.step(flash);
+                            },
+                            _ => {
+                                panic!("Unknown follow address 0x{:02X}", a1);
+                            }
+                        }
                     } else {
                         old = flash[a];
                         if let Some(new) = new_opt {

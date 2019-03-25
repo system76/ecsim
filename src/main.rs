@@ -2,31 +2,24 @@ use area8051::{Addr, Isa, Mcu, Mem, Reg};
 use std::fs;
 use std::sync::Mutex;
 
+use self::spi::Spi;
+mod spi;
+
 use self::xram::xram;
 mod xram;
-
-pub struct Spi {
-    flash: Box<[u8]>,
-}
-
-impl Spi {
-    pub fn new(flash: Box<[u8]>) -> Self {
-        Self {
-            flash,
-        }
-    }
-}
 
 pub struct Ec {
     mcu: Mutex<Mcu>,
     spi: Mutex<Spi>,
+    xmem: Mutex<Box<[u8]>>,
 }
 
 impl Ec {
     pub fn new(pmem: Box<[u8]>) -> Self {
         Self {
             mcu: Mutex::new(Mcu::new(pmem.clone())),
-            spi: Mutex::new(Spi::new(pmem)),
+            spi: Mutex::new(Spi::new()),
+            xmem: Mutex::new(pmem),
         }
     }
 
