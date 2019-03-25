@@ -5,14 +5,28 @@ use std::sync::Mutex;
 use self::xram::xram;
 mod xram;
 
+pub struct Spi {
+    flash: Box<[u8]>,
+}
+
+impl Spi {
+    pub fn new(flash: Box<[u8]>) -> Self {
+        Self {
+            flash,
+        }
+    }
+}
+
 pub struct Ec {
     mcu: Mutex<Mcu>,
+    spi: Mutex<Spi>,
 }
 
 impl Ec {
     pub fn new(pmem: Box<[u8]>) -> Self {
         Self {
-            mcu: Mutex::new(Mcu::new(pmem))
+            mcu: Mutex::new(Mcu::new(pmem.clone())),
+            spi: Mutex::new(Spi::new(pmem)),
         }
     }
 
@@ -29,12 +43,13 @@ impl Ec {
 
 impl Mem for Ec {
     fn load(&self, addr: Addr) -> u8 {
-        let mut mcu = self.mcu.lock().unwrap();
         match addr {
             Addr::XRam(i) => {
-                xram(&mut mcu, i, None)
+                xram(self, i, None)
             },
             Addr::PMem(i) => {
+                let mcu = self.mcu.lock().unwrap();
+
                 let real = if i >= 0x8000 {
                     let bank = if mcu.xram[0x1001] & (1 << 7) == 0 {
                         // Use P1[1:0]
@@ -66,17 +81,22 @@ impl Mem for Ec {
 
                 mcu.pmem[real]
             },
-            _ => mcu.load(addr),
+            _ => {
+                let mcu = self.mcu.lock().unwrap();
+                mcu.load(addr)
+            },
         }
     }
 
     fn store(&mut self, addr: Addr, value: u8) {
-        let mut mcu = self.mcu.lock().unwrap();
         match addr {
             Addr::XRam(i) => {
-                xram(&mut mcu, i, Some(value));
+                xram(self, i, Some(value));
             },
-            _ => mcu.store(addr, value),
+            _ => {
+                let mut mcu = self.mcu.lock().unwrap();
+                mcu.store(addr, value);
+            },
         }
     }
 }

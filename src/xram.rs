@@ -12,8 +12,11 @@ macro_rules! debug {
     ($($arg:tt)*) => ();
 }
 
-pub fn xram(mcu: &mut Mcu, address: u16, new_opt: Option<u8>) -> u8 {
-    debug!(" [xram 0x{:04X}", address);
+pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
+    let mut mcu = ec.mcu.lock().unwrap();
+    let mut spi = ec.spi.lock().unwrap();
+
+    debug!("\n[xram 0x{:04X}", address);
 
     let mut old = mcu.load(Addr::XRam(address));
 
@@ -59,17 +62,41 @@ pub fn xram(mcu: &mut Mcu, address: u16, new_opt: Option<u8>) -> u8 {
                 0x3E => debug!(" ECINDAR3"),
                 0x3F => {
                     debug!(" ECINDDR");
-                    let ecindar = {
-                        (mcu.load(Addr::XRam(base + 0x3B)) as u32) |
-                        (mcu.load(Addr::XRam(base + 0x3C)) as u32) << 8 |
-                        (mcu.load(Addr::XRam(base + 0x3D)) as u32) << 16 |
-                        (mcu.load(Addr::XRam(base + 0x3E)) as u32) << 24
+
+                    let a0 = mcu.load(Addr::XRam(base + 0x3B));
+                    let a1 = mcu.load(Addr::XRam(base + 0x3C));
+                    let a2 = mcu.load(Addr::XRam(base + 0x3D));
+                    let a3 = mcu.load(Addr::XRam(base + 0x3E));
+                    let a = {
+                        (a0 as usize) |
+                        (a1 as usize) << 8 |
+                        (a2 as usize) << 16 |
+                        (a3 as usize) << 24
                     };
 
-                    debug!(" [flash address 0x{:08X}]", ecindar);
-                    old = mcu.pmem[ecindar as usize];
-                    if let Some(new) = new_opt {
-                        mcu.pmem[ecindar as usize] = new;
+                    debug!(" [flash address 0x{:08X}", a);
+                    let flash = match (a3 >> 6) & 0b11 {
+                        0b00 | 0b11 => {
+                            debug!(" (external)");
+                            &mut spi.flash
+                        },
+                        0b01 => {
+                            debug!(" (internal)");
+                            &mut mcu.pmem
+                        },
+                        unknown => {
+                            panic!("unknown ECIND flash chip 0b{:02b}", unknown);
+                        }
+                    };
+                    debug!("]");
+
+                    if a3 & 0xF == 0xF {
+                        panic!("flash follow not supported: {:?}", new_opt);
+                    } else {
+                        old = flash[a];
+                        if let Some(new) = new_opt {
+                            flash[a] = new;
+                        }
                     }
                 },
                 0x43 => debug!(" SCAR1L"),
