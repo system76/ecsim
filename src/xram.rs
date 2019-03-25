@@ -27,7 +27,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(" (SRAM)");
         },
         // SMFI
-        0x1000 ... 0x107F => {
+        0x1000 ... 0x10FF => {
             let base = 0x1000;
             let offset = address - base;
             debug!(" (SMFI 0x{:02X}", offset);
@@ -56,6 +56,8 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x01 => debug!(" FPCFG"),
                 0x07 => debug!(" UNKNOWN"),
                 0x20 => debug!(" SMECCS"),
+                0x32 => debug!(" FLHCTRL2R"),
+                0x33 => debug!(" CACHDISR"),
                 0x36 => debug!(" HCTRL2R"),
                 0x3B => debug!(" ECINDAR0"),
                 0x3C => debug!(" ECINDAR1"),
@@ -159,6 +161,18 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             }
             debug!(")");
         },
+        // INTC
+        0x1100 ... 0x11FF => {
+            let base = 0x1100;
+            let offset = address - base;
+            debug!(" (INTC 0x{:02X}", offset);
+            match offset {
+                0x05 => debug!(" IER1"),
+                0x07 => debug!(" IER3"),
+                _ => panic!("xram unimplemented INTC register 0x{:02X}", offset)
+            }
+            debug!(")");
+        },
         // KBC
         0x1300 ... 0x13FF => {
             let base = 0x1300;
@@ -167,6 +181,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             match offset {
                 0x00 => debug!(" KBHICR"),
                 0x02 => debug!(" KBIRQR"),
+                0x04 => debug!(" KBHISR"),
                 _ => panic!("xram unimplemented KBC register 0x{:02X}", offset)
             }
             debug!(")");
@@ -177,8 +192,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let offset = address - base;
             debug!(" (PMC 0x{:02X}", offset);
             match offset {
+                0x00 => debug!(" PMSTS"),
                 0x06 => debug!(" PM1CTL"),
                 0x16 => debug!(" PM2CTL"),
+                0x30 => debug!(" PM4STS"),
                 _ => panic!("xram unimplemented PMC register 0x{:02X}", offset)
             }
             debug!(")");
@@ -231,7 +248,30 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x04 => debug!(" PSINT1"),
                 0x05 => debug!(" PSINT2"),
                 0x06 => debug!(" PSINT3"),
+                0x0A => debug!(" PSSTS3"),
                 _ => panic!("xram unimplemented PS/2 register 0x{:02X}", offset)
+            }
+            debug!(")");
+        },
+        // PWM
+        0x1800 ... 0x18FF => {
+            let base = 0x1800;
+            let offset = address - base;
+            debug!(" (PWM 0x{:02X}", offset);
+            match offset {
+                0x01 => debug!(" CTR0"),
+                0x02 ... 0x09 => debug!(" DCR{}", offset - 0x02),
+                0x0B => debug!(" PCFSR"),
+                0x0C => debug!(" PCSSGL"),
+                0x0F => debug!(" PCSGR"),
+                0x23 => debug!(" ZTIER"),
+                0x27 => debug!(" C4CPRS"),
+                0x2B => debug!(" C6CPRS"),
+                0x2C => debug!(" C6MCPRS"),
+                0x2D => debug!(" C7CPRS"),
+                0x40 => debug!(" CLK6MSEL"),
+                0x43 => debug!(" CTR3"),
+                _ => panic!("xram unimplemented PWM register 0x{:02X}", offset)
             }
             debug!(")");
         },
@@ -311,6 +351,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let offset = address - base;
             debug!(" (GCTRL 0x{:02X}", offset);
             match offset {
+                0x01 => debug!(" ECHIPID2"),
                 0x06 => debug!(" RSTS"),
                 0x0A => debug!(" BADRSEL"),
                 0x0B => debug!(" WNCKR"),
@@ -324,6 +365,18 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let base = 0x2200;
             let offset = address - base;
             debug!(" (BRAM 0x{:02X})", offset);
+        },
+        // PECI
+        0x3000 ... 0x30FF => {
+            let base = 0x3000;
+            let offset = address - base;
+            debug!(" (PECI 0x{:02X}", offset);
+            match offset {
+                0x08 => debug!(" HOCTL2R"),
+                0x0E => debug!(" PADCTLR"),
+                _ => panic!("xram unimplemented PECI register 0x{:02X}", offset)
+            }
+            debug!(")");
         },
         _ => panic!("xram unimplemented register 0x{:04X}", address),
     }

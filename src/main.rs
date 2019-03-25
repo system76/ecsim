@@ -114,6 +114,11 @@ impl Isa for Ec {
         for (reg, _, _) in Self::scar() {
             mcu.xram[reg + 2] = 0b11;
         }
+
+        // Set CHIP ID
+        mcu.xram[0x2000] = 0x85;
+        mcu.xram[0x2001] = 0x87;
+        mcu.xram[0x2002] = 0x06;
     }
 }
 
@@ -126,6 +131,12 @@ fn main() {
 
     loop {
         ec.step();
+
+        // Check pcon for idle or power down
+        let pcon = ec.load(Addr::Reg(0x87));
+        if (pcon & 0b11) != 0 {
+            panic!("unimplemented PCON 0x{:02X}", pcon);
+        }
 
         if ec.pc() == 0 {
             eprintln!("reset!");
