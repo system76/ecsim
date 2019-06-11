@@ -6,6 +6,8 @@ edition = "2018"
 
 [dependencies]
 area8051 = { path = "area8051" }
+ctrlc = "3.1.3"
+liner = { git = "https://gitlab.redox-os.org/redox-os/liner.git" }
 
 [features]
 default = ["debug_spi", "debug_xram"]

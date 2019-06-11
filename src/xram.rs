@@ -263,6 +263,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x02 ... 0x09 => debug!(" DCR{}", offset - 0x02),
                 0x0B => debug!(" PCFSR"),
                 0x0C => debug!(" PCSSGL"),
+                0x0D => debug!(" PCSSGH"),
                 0x0F => debug!(" PCSGR"),
                 0x23 => debug!(" ZTIER"),
                 0x27 => debug!(" C4CPRS"),
@@ -315,6 +316,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             match offset {
                 0x00 => debug!(" HOSTAA"),
                 0x01 => debug!(" HOCTLA"),
+                0x02 => debug!(" HOCMDA"),
+                0x03 => debug!(" TRASLAA"),
+                0x04 => debug!(" D0REGA"),
+                0x05 => debug!(" D1REGA"),
                 0x10 => debug!(" HOCTL2A"),
                 0x11 => debug!(" HOSTAB"),
                 0x12 => debug!(" HOCTLB"),
