@@ -1,6 +1,6 @@
 use area8051::{Addr, Isa, Mem};
 use std::{fs, io};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 pub use self::ec::Ec;
@@ -36,26 +36,30 @@ static STEP: AtomicBool = AtomicBool::new(false);
 
 fn commands() -> CommandMap {
     let mut commands: CommandMap = HashMap::new();
+    let mut command_help = BTreeMap::new();
 
-    commands.insert("continue", Box::new(|_| {
+    macro_rules! command {
+        ($name: expr, $help: expr, $func: expr) => ({
+            commands.insert($name, Box::new($func));
+            command_help.insert($name, $help);
+        });
+    }
+
+    command!("continue", "continue execution", |_| {
         eprintln!("continuing...");
         RUNNING.store(true, Ordering::SeqCst);
-    }));
-    commands.insert("pc", Box::new(|ec: &mut Ec| {
-        let mcu = ec.mcu.lock().unwrap();
-        eprintln!("pc: {:04X}", mcu.pc);
-    }));
-    commands.insert("quit", Box::new(|_| {
+    });
+    command!("quit", "quit program", |_| {
         eprintln!("quiting...");
         QUIT.store(true, Ordering::SeqCst);
-    }));
-    commands.insert("step", Box::new(|ec: &mut Ec| {
+    });
+    command!("step", "execute one instruction", |ec: &mut Ec| {
         let mcu = ec.mcu.lock().unwrap();
         eprintln!("step: {:04X}", mcu.pc);
         STEP.store(true, Ordering::SeqCst);
-    }));
+    });
 
-    commands.insert("iram", Box::new(|ec: &mut Ec| {
+    command!("iram", "dump internal RAM", |ec: &mut Ec| {
         let mcu = ec.mcu.lock().unwrap();
         eprintln!("iram:");
         for row in 0..mcu.iram.len() / 16 {
@@ -66,8 +70,12 @@ fn commands() -> CommandMap {
             }
             eprintln!();
         }
-    }));
-    commands.insert("xram", Box::new(|ec: &mut Ec| {
+    });
+    command!("pc", "show program counter", |ec: &mut Ec| {
+        let mcu = ec.mcu.lock().unwrap();
+        eprintln!("pc: {:04X}", mcu.pc);
+    });
+    command!("xram", "dump external RAM", |ec: &mut Ec| {
         let mcu = ec.mcu.lock().unwrap();
         eprintln!("xram:");
         for row in 0..mcu.xram.len() / 16 {
@@ -78,18 +86,12 @@ fn commands() -> CommandMap {
             }
             eprintln!();
         }
-    }));
+    });
 
-    let mut command_help = Vec::new();
-    for (name, _func) in &commands {
-        command_help.push(*name);
-    }
-    command_help.push("help");
-    command_help.sort();
-
+    command_help.insert("help", "show command information");
     commands.insert("help", Box::new(move |_| {
-        for help in &command_help {
-            eprintln!("  - {}", help);
+        for (name, help) in &command_help {
+            eprintln!("  - {} - {}", name, help);
         }
     }));
 
