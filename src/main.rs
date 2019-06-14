@@ -1,5 +1,6 @@
 use area8051::{Addr, Isa, Mem};
 use std::{fs, io};
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 pub use self::ec::Ec;
@@ -11,15 +12,89 @@ mod spi;
 pub use self::xram::xram;
 mod xram;
 
-struct Completer;
+type CommandMap = HashMap<&'static str, Box<Fn(&mut Ec)>>;
 
-impl liner::Completer for Completer {
-    fn completions(&mut self, _start: &str) -> Vec<String> {
-        Vec::new()
+struct Completer<'a> {
+    commands: &'a CommandMap
+}
+
+impl<'a> liner::Completer for Completer<'a> {
+    fn completions(&mut self, start: &str) -> Vec<String> {
+        let mut completions = Vec::new();
+        for (name, _func) in self.commands {
+            if name.starts_with(start) {
+                completions.push(name.to_string());
+            }
+        }
+        completions
     }
 }
 
+static QUIT: AtomicBool = AtomicBool::new(false);
 static RUNNING: AtomicBool = AtomicBool::new(true);
+static STEP: AtomicBool = AtomicBool::new(false);
+
+fn commands() -> CommandMap {
+    let mut commands: CommandMap = HashMap::new();
+
+    commands.insert("continue", Box::new(|_| {
+        eprintln!("continuing...");
+        RUNNING.store(true, Ordering::SeqCst);
+    }));
+    commands.insert("pc", Box::new(|ec: &mut Ec| {
+        let mcu = ec.mcu.lock().unwrap();
+        eprintln!("pc: {:04X}", mcu.pc);
+    }));
+    commands.insert("quit", Box::new(|_| {
+        eprintln!("quiting...");
+        QUIT.store(true, Ordering::SeqCst);
+    }));
+    commands.insert("step", Box::new(|ec: &mut Ec| {
+        let mcu = ec.mcu.lock().unwrap();
+        eprintln!("step: {:04X}", mcu.pc);
+        STEP.store(true, Ordering::SeqCst);
+    }));
+
+    commands.insert("iram", Box::new(|ec: &mut Ec| {
+        let mcu = ec.mcu.lock().unwrap();
+        eprintln!("iram:");
+        for row in 0..mcu.iram.len() / 16 {
+            let row_offset = row * 16;
+            eprint!("{:04X}:", row_offset);
+            for col in 0..16 {
+                eprint!(" {:02X}", mcu.iram[row_offset + col]);
+            }
+            eprintln!();
+        }
+    }));
+    commands.insert("xram", Box::new(|ec: &mut Ec| {
+        let mcu = ec.mcu.lock().unwrap();
+        eprintln!("xram:");
+        for row in 0..mcu.xram.len() / 16 {
+            let row_offset = row * 16;
+            eprint!("{:04X}:", row_offset);
+            for col in 0..16 {
+                eprint!(" {:02X}", mcu.xram[row_offset + col]);
+            }
+            eprintln!();
+        }
+    }));
+
+    let mut command_help = Vec::new();
+    for (name, _func) in &commands {
+        command_help.push(*name);
+    }
+    command_help.push("help");
+    command_help.sort();
+
+    commands.insert("help", Box::new(move |_| {
+        for help in &command_help {
+            eprintln!("  - {}", help);
+        }
+    }));
+
+    commands
+}
 
 fn main() {
     ctrlc::set_handler(|| {
@@ -36,11 +111,11 @@ fn main() {
 
     ec.reset();
 
-    let mut step = false;
+    let commands = commands();
+
     let mut con = liner::Context::new();
-    loop {
-        while step || RUNNING.load(Ordering::SeqCst) {
-            step = false;
+    while ! QUIT.load(Ordering::SeqCst) {
+        while STEP.swap(false, Ordering::SeqCst) || RUNNING.load(Ordering::SeqCst) {
             ec.step();
 
             // Check pcon for idle or power down
@@ -55,53 +130,20 @@ fn main() {
             }
         }
 
-        match con.read_line("[ecsim]$ ", None, &mut Completer) {
+        match con.read_line(
+            "[ecsim]$ ",
+            None,
+            &mut Completer {
+                commands: &commands,
+            }
+        ) {
             Ok(ok) => {
-                let mcu = ec.mcu.lock().unwrap();
-
-                match ok.as_str() {
-                    "continue" => {
-                        eprintln!("continuing...");
-                        RUNNING.store(true, Ordering::SeqCst);
-                    },
-                    "quit" => {
-                        break;
-                    },
-                    "step" => {
-                        eprintln!("step: {:04X}", mcu.pc);
-                        step = true;
-                    },
-                    "" => (),
-
-                    "pc" => {
-                        eprintln!("pc: {:04X}", mcu.pc);
-                    },
-                    "iram" => {
-                        eprintln!("xram:");
-                        for row in 0..mcu.iram.len() / 16 {
-                            let row_offset = row * 16;
-                            eprint!("{:04X}:", row_offset);
-                            for col in 0..16 {
-                                eprint!(" {:02X}", mcu.iram[row_offset + col]);
-                            }
-                            eprintln!();
-                        }
-                    },
-                    "xram" => {
-                        eprintln!("xram:");
-                        for row in 0..mcu.xram.len() / 16 {
-                            let row_offset = row * 16;
-                            eprint!("{:04X}:", row_offset);
-                            for col in 0..16 {
-                                eprint!(" {:02X}", mcu.xram[row_offset + col]);
-                            }
-                            eprintln!();
-                        }
-                    },
-
-                    unknown => {
-                        eprintln!("unknown command: {}", unknown);
-                    }
+                if let Some(func) = commands.get(ok.as_str()) {
+                    func(&mut ec);
+                } else if ok.is_empty() {
+                    // Ignore empty lines
+                } else {
+                    eprintln!("unknown command: {}", ok);
                 }
 
                 con.history.push(ok.into()).unwrap();
@@ -112,7 +154,7 @@ fn main() {
                 },
                 io::ErrorKind::UnexpectedEof => {
                     eprintln!("^D");
-                    break;
+                    QUIT.store(true, Ordering::SeqCst);
                 },
                 _ => {
                     panic!("error: {:?}", err);
