@@ -121,6 +121,16 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                         }
                     }
                 },
+                0x40 => debug!(" SCAR0L"),
+                0x41 => debug!(" SCAR0M"),
+                0x42 => {
+                    debug!(" SCAR0H");
+                    if let Some(new) = new_opt {
+                        if old & 0x80 != 0 && new & 0x80 == 0 {
+                            scar_dma(0);
+                        }
+                    }
+                },
                 0x43 => debug!(" SCAR1L"),
                 0x44 => debug!(" SCAR1M"),
                 0x45 => {
@@ -232,6 +242,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x58 ... 0x5F => debug!(" GPCRJ{}", offset - 0x58),
                 0xA0 ... 0xA6 => debug!(" GPCRM{}", offset - 0xA0),
 
+                0xF0 ... 0xFE => debug!(" GCR{}", offset - 0xF0 + 1),
+                0xE0 ... 0xE2 => debug!(" GCR{}", offset - 0xE0 + 16),
+                0xE4 ... 0xE8 if ec.id == 0x5570 => debug!(" GCR{}", offset - 0xE4 + 19),
+
                 _ => panic!("xram unimplemented GPIO register 0x{:02X}", offset)
             }
             debug!(")");
@@ -270,6 +284,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x2B => debug!(" C6CPRS"),
                 0x2C => debug!(" C6MCPRS"),
                 0x2D => debug!(" C7CPRS"),
+                0x2E => debug!(" C7MCPRS"),
                 0x40 => debug!(" CLK6MSEL"),
                 0x43 => debug!(" CTR3"),
                 _ => panic!("xram unimplemented PWM register 0x{:02X}", offset)
@@ -292,6 +307,8 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x18 => debug!(" VCH0DATL"),
                 0x19 => debug!(" VCH0DATM"),
                 0x38 => debug!(" VCH4CTL"),
+                0x3B => debug!(" VCH5CTL"),
+                0x3E => debug!(" VCH6CTL"),
                 _ => panic!("xram unimplemented ADC register 0x{:02X}", offset)
             }
             debug!(")");
@@ -334,6 +351,15 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x29 => debug!(" HOSTAC"),
                 0x2A => debug!(" HOCTLC"),
                 0x32 => debug!(" HOCTL2C"),
+                0x35 => debug!(" HOSTAD"),
+                0x36 => debug!(" HOCTLD"),
+                0x3E => debug!(" HOCTL2D"),
+                0xA0 if ec.id == 0x5570 => debug!(" HOSTAE"),
+                0xA1 if ec.id == 0x5570 => debug!(" HOCTLE"),
+                0xAA if ec.id == 0x5570 => debug!(" HOCTL2E"),
+                0xB0 if ec.id == 0x5570 => debug!(" HOSTAF"),
+                0xB1 if ec.id == 0x5570 => debug!(" HOCTLF"),
+                0xBA if ec.id == 0x5570 => debug!(" HOCTL2F"),
                 _ => panic!("xram unimplemented SMBUS register 0x{:02X}", offset)
             }
             debug!(")");
@@ -383,6 +409,11 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             }
             debug!(")");
         },
+        0x8000 ... 0x97FF if ec.id == 0x5570 => {
+            let base = 0x8000;
+            let offset = address - base;
+            debug!(" (SRAM 0x{:02X})", offset);
+        }
         _ => panic!("xram unimplemented register 0x{:04X}", address),
     }
 

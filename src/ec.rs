@@ -4,14 +4,18 @@ use std::sync::Mutex;
 use crate::{Spi, xram};
 
 pub struct Ec {
+    pub id: u16,
+    pub version: u8,
     pub mcu: Mutex<Mcu>,
     pub spi: Mutex<Spi>,
     pub xmem: Mutex<Box<[u8]>>,
 }
 
 impl Ec {
-    pub fn new(pmem: Box<[u8]>) -> Self {
+    pub fn new(id: u16, version: u8, pmem: Box<[u8]>) -> Self {
         Self {
+            id,
+            version,
             mcu: Mutex::new(Mcu::new(pmem.clone())),
             spi: Mutex::new(Spi::new()),
             xmem: Mutex::new(pmem),
@@ -111,8 +115,8 @@ impl Isa for Ec {
         }
 
         // Set CHIP ID
-        mcu.xram[0x2000] = 0x85;
-        mcu.xram[0x2001] = 0x87;
-        mcu.xram[0x2002] = 0x06;
+        mcu.xram[0x2000] = (self.id >> 8) as u8;
+        mcu.xram[0x2001] = self.id as u8;
+        mcu.xram[0x2002] = self.version;
     }
 }
