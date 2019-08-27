@@ -202,7 +202,19 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let offset = address - base;
             debug!(" (PMC 0x{:02X}", offset);
             match offset {
-                0x00 => debug!(" PMSTS"),
+                0x00 => debug!(" PM1STS"),
+                0x01 => {
+                    debug!(" PM1DO");
+                    //TODO: Enforce write-only
+                    // Set output buffer full flag
+                    mcu.xram[0x1500] |= 1;
+                },
+                0x04 => {
+                    debug!(" PM1DI");
+                    //TODO: Enforce read-only
+                    // Clear input buffer full flag
+                    mcu.xram[0x1500] &= !(1 << 1);
+                }
                 0x06 => debug!(" PM1CTL"),
                 0x16 => debug!(" PM2CTL"),
                 0x30 => debug!(" PM4STS"),

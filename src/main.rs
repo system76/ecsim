@@ -88,6 +88,12 @@ fn commands() -> CommandMap {
         }
     });
 
+    command!("0x9A", "send 0x9A command", |ec: &mut Ec| {
+        let mut mcu = ec.mcu.lock().unwrap();
+        mcu.xram[0x1500] |= (1 << 3) | (1 << 1);
+        mcu.xram[0x1504] = 0x9A;
+    });
+
     command_help.insert("help", "show command information");
     commands.insert("help", Box::new(move |_| {
         for (name, help) in &command_help {
