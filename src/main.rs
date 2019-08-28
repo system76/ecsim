@@ -1,10 +1,14 @@
 use area8051::{Addr, Isa, Mem};
 use std::{fs, io};
 use std::collections::{BTreeMap, HashMap};
+use std::net::UdpSocket;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 pub use self::ec::Ec;
 mod ec;
+
+use self::socket::socket_op;
+mod socket;
 
 pub use self::spi::Spi;
 mod spi;
@@ -121,9 +125,37 @@ fn main() {
 
     let commands = commands();
 
+    let mut socket_opt = UdpSocket::bind("127.0.0.1:8587").ok();
+    if let Some(ref mut socket) = socket_opt {
+        socket.set_nonblocking(true).expect("failed to set socket nonblocking");
+    }
+
     let mut con = liner::Context::new();
     while ! QUIT.load(Ordering::SeqCst) {
         while STEP.swap(false, Ordering::SeqCst) || RUNNING.load(Ordering::SeqCst) {
+            if let Some(ref mut socket) = socket_opt {
+                let mut request = [0x00; 3];
+                match socket.recv_from(&mut request) {
+                    Ok((count, addr)) => if count >= request.len() {
+                        let response = socket_op(&mut ec, &request);
+                        socket.send_to(&response, addr).expect("failed to write socket");
+                    },
+                    Err(err) => match err.kind() {
+                        io::ErrorKind::WouldBlock => (),
+                        io::ErrorKind::Interrupted => {
+                            eprintln!("^C");
+                        },
+                        io::ErrorKind::UnexpectedEof => {
+                            eprintln!("^D");
+                            QUIT.store(true, Ordering::SeqCst);
+                        },
+                        _ => {
+                            panic!("failed to read socket: {:?}", err);
+                        }
+                    }
+                }
+            }
+
             ec.step();
 
             // Check pcon for idle or power down

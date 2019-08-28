@@ -12,6 +12,7 @@ macro_rules! debug {
 
 pub struct Spi {
     pub write: bool,
+    pub aai_addr: Option<usize>,
     pub input: VecDeque<u8>,
     pub output: VecDeque<u8>,
 }
@@ -20,14 +21,15 @@ impl Spi {
     pub fn new() -> Self {
         Self {
             write: false,
+            aai_addr: None,
             input: VecDeque::new(),
             output: VecDeque::new(),
         }
     }
 
-    pub fn step(&mut self, flash: &mut [u8]) {
+    pub fn step(&mut self, flash: &mut [u8], flash_name: &str) {
         if let Some(command) = self.input.pop_front() {
-            debug!("\n[spi");
+            debug!("\n[spi {}", flash_name);
 
             match command {
                 0x01 => {
@@ -64,6 +66,11 @@ impl Spi {
                         }
                     }
                 },
+                0x04 => {
+                    debug!(" write disable");
+                    self.write = false;
+                    self.aai_addr = None;
+                },
                 0x05 => {
                     debug!(" read status");
                     let value = (self.write as u8) << 1;
@@ -73,12 +80,73 @@ impl Spi {
                     debug!(" write enable");
                     self.write = true;
                 },
+                0x50 => {
+                    debug!(" write volatile status register");
+                    // TODO
+                },
+                0x60 => {
+                    debug!(" chip erase");
+                    for b in flash.iter_mut() {
+                        *b = 0xFF;
+                    }
+                },
+                0x9F => {
+                    debug!(" jedec id");
+                    self.output.push_back(0xEF);
+                    self.output.push_back(0xEF);
+                    self.output.push_back(0xEF);
+                },
+                0xAD => {
+                    debug!(" aai program");
+
+                    let addr = if self.input.len() > 2 {
+                        let a2 = self.input.pop_front().expect("spi aai program value missing");
+                        let a1 = self.input.pop_front().expect("spi aai program value missing");
+                        let a0 = self.input.pop_front().expect("spi aai program value missing");
+
+                        (a0 as usize) |
+                        (a1 as usize) << 8 |
+                        (a2 as usize) << 16
+                    } else {
+                        self.aai_addr.expect("spi aai address not set")
+                    };
+
+                    debug!(" 0x{:06X}", addr);
+
+                    let d0 = self.input.pop_front().expect("spi aai program value missing");
+                    let d1 = self.input.pop_front().expect("spi aai program value missing");
+
+                    debug!(" = 0x{:02X}, 0x{:02X}", d0, d1);
+
+                    flash[addr] = d0;
+                    flash[addr + 1] = d1;
+
+                    self.aai_addr = Some(addr + 2);
+                },
+                0xD7 => {
+                    debug!(" page erase");
+
+                    let a2 = self.input.pop_front().expect("spi page erase value missing");
+                    let a1 = self.input.pop_front().expect("spi page erase value missing");
+                    let a0 = self.input.pop_front().expect("spi page erase value missing");
+
+                    let addr =
+                        (a0 as usize) |
+                        (a1 as usize) << 8 |
+                        (a2 as usize) << 16;
+
+                    debug!(" 0x{:06X}", addr);
+
+                    for b in flash[addr..addr + 256].iter_mut() {
+                        *b = 0xFF;
+                    }
+                },
                 _ => {
                     panic!("unknown SPI command 0x{:02X}", command);
                 }
             }
 
-            assert!(self.input.is_empty());
+            assert_eq!(self.input.len(), 0);
 
             debug!("]");
         }

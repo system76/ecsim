@@ -9,6 +9,7 @@ pub struct Ec {
     pub mcu: Mutex<Mcu>,
     pub spi: Mutex<Spi>,
     pub xmem: Mutex<Box<[u8]>>,
+    pub superio_addr: u8,
 }
 
 impl Ec {
@@ -19,6 +20,7 @@ impl Ec {
             mcu: Mutex::new(Mcu::new(pmem.clone())),
             spi: Mutex::new(Spi::new()),
             xmem: Mutex::new(pmem),
+            superio_addr: 0,
         }
     }
 

@@ -23,11 +23,11 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
 
     match address {
         // Scratch SRAM
-        0x0000 ... 0x0FFF => {
+        0x0000 ..= 0x0FFF => {
             debug!(" (SRAM)");
         },
         // SMFI
-        0x1000 ... 0x10FF => {
+        0x1000 ..= 0x10FF => {
             let base = 0x1000;
             let offset = address - base;
             debug!(" (SMFI 0x{:02X}", offset);
@@ -78,20 +78,18 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                     };
 
                     debug!(" [flash address 0x{:08X}", a);
-                    let flash = match (a3 >> 6) & 0b11 {
+                    let (flash, flash_name): (&mut [u8], &str) = match (a3 >> 6) & 0b11 {
                         0b00 | 0b11 => {
-                            debug!(" (external)");
-                            &mut xmem
+                            (&mut xmem, "external")
                         },
                         0b01 => {
-                            debug!(" (internal)");
-                            &mut mcu.pmem
+                            (&mut mcu.pmem, "internal")
                         },
                         unknown => {
                             panic!("unknown ECIND flash chip 0b{:02b}", unknown);
                         }
                     };
-                    debug!("]");
+                    debug!(" ({})]", flash_name);
 
                     if a3 & 0xF == 0xF {
                         match a1 {
@@ -101,23 +99,24 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                                 if let Some(new) = new_opt {
                                     spi.input.push_back(new);
                                 } else {
-                                    spi.step(flash);
+                                    spi.step(flash, flash_name);
                                     old = spi.output.pop_front().expect("tried to read missing flash follow output");
                                 }
                             },
                             0xFE => {
                                 // Disable chip
                                 debug!(" [follow disable]");
-                                spi.step(flash);
+                                spi.step(flash, flash_name);
                             },
                             _ => {
                                 panic!("Unknown follow address 0x{:02X}", a1);
                             }
                         }
                     } else {
-                        old = flash[a];
+                        let i = a & 0xFFFFFF;
+                        old = flash[i];
                         if let Some(new) = new_opt {
-                            flash[a] = new;
+                            flash[i] = new;
                         }
                     }
                 },
@@ -172,7 +171,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(")");
         },
         // INTC
-        0x1100 ... 0x11FF => {
+        0x1100 ..= 0x11FF => {
             let base = 0x1100;
             let offset = address - base;
             debug!(" (INTC 0x{:02X}", offset);
@@ -184,7 +183,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(")");
         },
         // KBC
-        0x1300 ... 0x13FF => {
+        0x1300 ..= 0x13FF => {
             let base = 0x1300;
             let offset = address - base;
             debug!(" (KBC 0x{:02X}", offset);
@@ -197,7 +196,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(")");
         },
         // PMC
-        0x1500 ... 0x15FF => {
+        0x1500 ..= 0x15FF => {
             let base = 0x1500;
             let offset = address - base;
             debug!(" (PMC 0x{:02X}", offset);
@@ -207,7 +206,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                     debug!(" PM1DO");
                     //TODO: Enforce write-only
                     // Set output buffer full flag
-                    mcu.xram[0x1500] |= 1;
+                    mcu.xram[0x1500] |= 1 << 0;
                 },
                 0x04 => {
                     debug!(" PM1DI");
@@ -223,7 +222,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(")");
         },
         // GPIO
-        0x1600 ... 0x16FF => {
+        0x1600 ..= 0x16FF => {
             let base = 0x1600;
             let offset = address - base;
             debug!(" (GPIO 0x{:02X}", offset);
@@ -242,28 +241,28 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x0A => debug!(" GPDRJ"),
                 0x0D => debug!(" GPDRM"),
 
-                0x10 ... 0x17 => debug!(" GPCRA{}", offset - 0x10),
-                0x18 ... 0x1F => debug!(" GPCRB{}", offset - 0x18),
-                0x20 ... 0x27 => debug!(" GPCRC{}", offset - 0x20),
-                0x28 ... 0x2F => debug!(" GPCRD{}", offset - 0x28),
-                0x30 ... 0x37 => debug!(" GPCRE{}", offset - 0x30),
-                0x38 ... 0x3F => debug!(" GPCRF{}", offset - 0x38),
-                0x40 ... 0x47 => debug!(" GPCRG{}", offset - 0x40),
-                0x48 ... 0x4F => debug!(" GPCRH{}", offset - 0x48),
-                0x50 ... 0x57 => debug!(" GPCRI{}", offset - 0x50),
-                0x58 ... 0x5F => debug!(" GPCRJ{}", offset - 0x58),
-                0xA0 ... 0xA6 => debug!(" GPCRM{}", offset - 0xA0),
+                0x10 ..= 0x17 => debug!(" GPCRA{}", offset - 0x10),
+                0x18 ..= 0x1F => debug!(" GPCRB{}", offset - 0x18),
+                0x20 ..= 0x27 => debug!(" GPCRC{}", offset - 0x20),
+                0x28 ..= 0x2F => debug!(" GPCRD{}", offset - 0x28),
+                0x30 ..= 0x37 => debug!(" GPCRE{}", offset - 0x30),
+                0x38 ..= 0x3F => debug!(" GPCRF{}", offset - 0x38),
+                0x40 ..= 0x47 => debug!(" GPCRG{}", offset - 0x40),
+                0x48 ..= 0x4F => debug!(" GPCRH{}", offset - 0x48),
+                0x50 ..= 0x57 => debug!(" GPCRI{}", offset - 0x50),
+                0x58 ..= 0x5F => debug!(" GPCRJ{}", offset - 0x58),
+                0xA0 ..= 0xA6 => debug!(" GPCRM{}", offset - 0xA0),
 
-                0xF0 ... 0xFE => debug!(" GCR{}", offset - 0xF0 + 1),
-                0xE0 ... 0xE2 => debug!(" GCR{}", offset - 0xE0 + 16),
-                0xE4 ... 0xE8 if ec.id == 0x5570 => debug!(" GCR{}", offset - 0xE4 + 19),
+                0xF0 ..= 0xFE => debug!(" GCR{}", offset - 0xF0 + 1),
+                0xE0 ..= 0xE2 => debug!(" GCR{}", offset - 0xE0 + 16),
+                0xE4 ..= 0xE8 if ec.id == 0x5570 => debug!(" GCR{}", offset - 0xE4 + 19),
 
                 _ => panic!("xram unimplemented GPIO register 0x{:02X}", offset)
             }
             debug!(")");
         },
         // PS/2
-        0x1700 ... 0x17FF => {
+        0x1700 ..= 0x17FF => {
             let base = 0x1700;
             let offset = address - base;
             debug!(" (PS/2 0x{:02X}", offset);
@@ -280,13 +279,13 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(")");
         },
         // PWM
-        0x1800 ... 0x18FF => {
+        0x1800 ..= 0x18FF => {
             let base = 0x1800;
             let offset = address - base;
             debug!(" (PWM 0x{:02X}", offset);
             match offset {
                 0x01 => debug!(" CTR0"),
-                0x02 ... 0x09 => debug!(" DCR{}", offset - 0x02),
+                0x02 ..= 0x09 => debug!(" DCR{}", offset - 0x02),
                 0x0B => debug!(" PCFSR"),
                 0x0C => debug!(" PCSSGL"),
                 0x0D => debug!(" PCSSGH"),
@@ -304,7 +303,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(")");
         },
         // ADC
-        0x1900 ... 0x19FF => {
+        0x1900 ..= 0x19FF => {
             let base = 0x1900;
             let offset = address - base;
             debug!(" (ADC 0x{:02X}", offset);
@@ -326,7 +325,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(")");
         },
         // DAC
-        0x1A00 ... 0x1AFF => {
+        0x1A00 ..= 0x1AFF => {
             let base = 0x1A00;
             let offset = address - base;
             debug!(" (DAC 0x{:02X}", offset);
@@ -338,7 +337,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(")");
         },
         // SMBus
-        0x1C00 ... 0x1CFF => {
+        0x1C00 ..= 0x1CFF => {
             let base = 0x1C00;
             let offset = address - base;
             debug!(" (SMBUS 0x{:02X}", offset);
@@ -377,7 +376,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(")");
         },
         // KB Scan
-        0x1D00 ... 0x1DFF => {
+        0x1D00 ..= 0x1DFF => {
             let base = 0x1D00;
             let offset = address - base;
             debug!(" (KBSCAN 0x{:02X}", offset);
@@ -389,12 +388,14 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(")");
         },
         // General Control
-        0x2000 ... 0x20FF => {
+        0x2000 ..= 0x20FF => {
             let base = 0x2000;
             let offset = address - base;
             debug!(" (GCTRL 0x{:02X}", offset);
             match offset {
+                0x00 => debug!(" ECHIPID1"),
                 0x01 => debug!(" ECHIPID2"),
+                0x02 => debug!(" ECHIPVER"),
                 0x06 => debug!(" RSTS"),
                 0x0A => debug!(" BADRSEL"),
                 0x0B => debug!(" WNCKR"),
@@ -404,13 +405,13 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(")");
         },
         // BRAM
-        0x2200 ... 0x22FF => {
+        0x2200 ..= 0x22FF => {
             let base = 0x2200;
             let offset = address - base;
             debug!(" (BRAM 0x{:02X})", offset);
         },
         // PECI
-        0x3000 ... 0x30FF => {
+        0x3000 ..= 0x30FF => {
             let base = 0x3000;
             let offset = address - base;
             debug!(" (PECI 0x{:02X}", offset);
@@ -421,7 +422,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             }
             debug!(")");
         },
-        0x8000 ... 0x97FF if ec.id == 0x5570 => {
+        0x8000 ..= 0x97FF if ec.id == 0x5570 => {
             let base = 0x8000;
             let offset = address - base;
             debug!(" (SRAM 0x{:02X})", offset);
