@@ -160,5 +160,7 @@ void main() {
 
     GPDRA |= (1 << 7);
 
+    GPCRF0 = 0x40;
+    GPDRF |= (1 << 0);
     for(;;) {}
 }
