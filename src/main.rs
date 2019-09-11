@@ -16,7 +16,7 @@ mod spi;
 pub use self::xram::xram;
 mod xram;
 
-type CommandMap = HashMap<&'static str, Box<Fn(&mut Ec)>>;
+type CommandMap = HashMap<&'static str, Box<dyn Fn(&mut Ec)>>;
 
 struct Completer<'a> {
     commands: &'a CommandMap
@@ -115,10 +115,13 @@ fn main() {
 
     let pmem = fs::read("ec.rom").expect("failed to read ec.rom");
 
+    let xmem = pmem.clone();
+
     let mut ec = Ec::new(
         //0x5570, 0x01, // IT5570 (B Version)
         0x8587, 0x06, // IT8587E/VG (F Version)
-        pmem.into_boxed_slice()
+        pmem.into_boxed_slice(),
+        xmem.into_boxed_slice()
     );
 
     ec.reset();

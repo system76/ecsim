@@ -13,13 +13,13 @@ pub struct Ec {
 }
 
 impl Ec {
-    pub fn new(id: u16, version: u8, pmem: Box<[u8]>) -> Self {
+    pub fn new(id: u16, version: u8, pmem: Box<[u8]>, xmem: Box<[u8]>) -> Self {
         Self {
             id,
             version,
-            mcu: Mutex::new(Mcu::new(pmem.clone())),
+            mcu: Mutex::new(Mcu::new(pmem)),
             spi: Mutex::new(Spi::new()),
-            xmem: Mutex::new(pmem),
+            xmem: Mutex::new(xmem),
             superio_addr: 0,
         }
     }
