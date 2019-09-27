@@ -1,3 +1,6 @@
+#ifndef _KBSCAN_H_
+#define _KBSCAN_H_
+
 __xdata volatile unsigned char __at(0x1D00) KSOL;
 __xdata volatile unsigned char __at(0x1D01) KSOH1;
 __xdata volatile unsigned char __at(0x1D02) KSOCTRL;
@@ -38,3 +41,5 @@ __xdata volatile unsigned char __at(0x1D22) SDC1R;
 __xdata volatile unsigned char __at(0x1D23) SDC2R;
 __xdata volatile unsigned char __at(0x1D24) SDC3R;
 __xdata volatile unsigned char __at(0x1D25) SDSR;
+
+#endif // _KBSCAN_H_

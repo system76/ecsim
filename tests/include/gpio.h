@@ -1,3 +1,6 @@
+#ifndef _GPIO_H_
+#define _GPIO_H_
+
 __xdata volatile unsigned char __at(0x1600) GCR;
 
 __xdata volatile unsigned char __at(0x1601) GPDRA;
@@ -133,3 +136,5 @@ __xdata volatile unsigned char __at(0x16A3) GPCRM3;
 __xdata volatile unsigned char __at(0x16A4) GPCRM4;
 __xdata volatile unsigned char __at(0x16A5) GPCRM5;
 __xdata volatile unsigned char __at(0x16A6) GPCRM6;
+
+#endif // _GPIO_H_
