@@ -92,6 +92,24 @@ fn commands() -> CommandMap {
         }
     });
 
+    command!("int0", "trigger INT0", |ec: &mut Ec| {
+        let mut mcu = ec.mcu.lock().unwrap();
+        let pc = mcu.pc();
+        mcu.push_sp(pc as u8);
+        mcu.push_sp((pc >> 8) as u8);
+        mcu.set_pc(0x0003);
+    });
+
+    command!("int1", "trigger INT1", |ec: &mut Ec| {
+        let mut mcu = ec.mcu.lock().unwrap();
+        // INTC INT11
+        mcu.xram[0x1110] = 0x10 + 11;
+        let pc = mcu.pc();
+        mcu.push_sp(pc as u8);
+        mcu.push_sp((pc >> 8) as u8);
+        mcu.set_pc(0x0013);
+    });
+
     command!("0x9A", "send 0x9A command", |ec: &mut Ec| {
         let mut mcu = ec.mcu.lock().unwrap();
         mcu.xram[0x1500] |= (1 << 3) | (1 << 1);

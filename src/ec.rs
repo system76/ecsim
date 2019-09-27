@@ -116,6 +116,9 @@ impl Isa for Ec {
             mcu.xram[reg + 2] = 0b11;
         }
 
+        // Set default INTC IVECT
+        mcu.xram[0x1110] = 0x10;
+
         // Set CHIP ID
         mcu.xram[0x2000] = (self.id >> 8) as u8;
         mcu.xram[0x2001] = self.id as u8;
