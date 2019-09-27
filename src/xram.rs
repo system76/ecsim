@@ -237,11 +237,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x04 => debug!(" GPDRD"),
                 0x05 => debug!(" GPDRE"),
                 0x06 => debug!(" GPDRF"),
-                0x07 => {
-                    debug!(" GPDRG");
-
-                    crate::RUNNING.store(false, std::sync::atomic::Ordering::SeqCst);
-                },
+                0x07 => debug!(" GPDRG"),
                 0x08 => debug!(" GPDRH"),
                 0x09 => debug!(" GPDRI"),
                 0x0A => debug!(" GPDRJ"),
@@ -389,38 +385,20 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             match offset {
                 0x00 => debug!(" KSOL"),
                 0x01 => debug!(" KSOH1"),
-                0x02 => {
-                    debug!(" KSOCTRL");
-
-                    crate::RUNNING.store(false, std::sync::atomic::Ordering::SeqCst);
-                },
+                0x02 => debug!(" KSOCTRL"),
                 0x03 => debug!(" KSOH2"),
-                0x04 => {
-                    debug!(" KSI");
-
-                    let kso =
-                        (mcu.xram[0x1D00] as u32) |
-                        (mcu.xram[0x1D01] as u32) << 8 |
-                        (mcu.xram[0x1D03] as u32) << 16;
-
-                    // Simulate press of Fn (KSI0 = KSO6) + F10 (KSI6 = KSO12)
-                    let mut ksi = 0xFF;
-                    if kso & (1 << 6) == 0 {
-                        ksi &= !(1 << 0);
-                    }
-                    if kso & (1 << 12) == 0 {
-                        ksi &= !(1 << 6);
-                    }
-
-                    old = ksi;
-
-                    crate::RUNNING.store(false, std::sync::atomic::Ordering::SeqCst);
-                },
-                0x05 => {
-                    debug!(" KSICTRLR");
-
-                    crate::RUNNING.store(false, std::sync::atomic::Ordering::SeqCst);
-                },
+                0x04 => debug!(" KSI"),
+                0x05 => debug!(" KSICTRLR"),
+                0x06 => debug!(" KSIGCTRL"),
+                0x07 => debug!(" KSIGOEN"),
+                0x08 => debug!(" KSIGDAT"),
+                0x09 => debug!(" KSIGDMRR"),
+                0x0A => debug!(" KSOHGCTRL"),
+                0x0B => debug!(" KSOHGOEN"),
+                0x0C => debug!(" KSOHGDMRR"),
+                0x0D => debug!(" KSOLGCTRL"),
+                0x0E => debug!(" KSOLGOEN"),
+                0x0F => debug!(" KSOLGDMRR"),
                 _ => panic!("xram unimplemented KBSCAN register 0x{:02X}", offset)
             }
             debug!(")");

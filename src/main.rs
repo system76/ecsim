@@ -1,5 +1,5 @@
 use area8051::{Addr, Isa, Mem};
-use std::{fs, io};
+use std::{env, fs, io};
 use std::collections::{BTreeMap, HashMap};
 use std::net::UdpSocket;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -131,7 +131,9 @@ fn main() {
         RUNNING.store(false, Ordering::SeqCst);
     }).expect("failed to set ctrl-c handler");
 
-    let pmem = fs::read("ec.rom").expect("failed to read ec.rom");
+    let pmem_path = env::args().nth(1).unwrap_or("ec.rom".to_string());
+
+    let pmem = fs::read(&pmem_path).expect("failed to read ec.rom");
 
     let xmem = pmem.clone();
 
