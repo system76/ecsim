@@ -143,6 +143,110 @@ void ps2_init() {
 void kbscan_init() {
     KSOCTRL = 0x05;
     KSICTRLR = 0x04;
+
+    // Set all outputs to GPIO mode and high
+    KSOH2 = 0xFF;
+    KSOH1 = 0xFF;
+    KSOL = 0xFF;
+    KSOHGCTRL = 0xFF;
+    KSOHGOEN = 0xFF;
+    KSOLGCTRL = 0xFF;
+    KSOLGOEN = 0xFF;
+}
+
+#include <8051.h>
+
+void timer_clear(void) {
+    TR0 = 0;
+    TF0 = 0;
+}
+
+void timer_mode_1(int value) {
+    timer_clear();
+    TMOD = 0x01;
+    TH0 = (unsigned char)(value >> 8);
+    TL0 = (unsigned char)value;
+    TR0 = 1;
+}
+
+void delay_ms(int ms) {
+    for (int i = 0; i < ms; i++) {
+        // One millisecond in ticks is determined as follows:
+        //   9.2 MHz is the clock rate
+        //   The timer divider is 12
+        //   The timer rate is 12 / 9.2 MHz = 1.304 us
+        //   The ticks are 1000 ms / (1.304 us) = 766.667
+        //   65536 - 766.667 = 64769.33
+        timer_mode_1(64769);
+        while (TF0 == 0) {}
+        timer_clear();
+    }
+}
+
+#include <stdbool.h>
+
+struct Pin {
+    __xdata volatile unsigned char * data;
+    __xdata volatile unsigned char * mirror;
+    __xdata volatile unsigned char * control;
+    unsigned char value;
+};
+
+#define PIN(BLOCK, NUMBER) { \
+    .data = &GPDR ## BLOCK, \
+    .mirror = &GPDMR ## BLOCK, \
+    .control = &GPCR ## BLOCK ## NUMBER, \
+    .value = (1 << NUMBER), \
+}
+
+bool pin_get(struct Pin * pin) {
+    if (*(pin->data) & pin->value) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void pin_set(struct Pin * pin, bool value) {
+    if (value) {
+        *(pin->data) |= pin->value;
+    } else {
+        *(pin->data) &= ~(pin->value);
+    }
+}
+
+struct Pin LED_BAT_CHG = PIN(A, 5);
+struct Pin LED_BAT_FULL = PIN(A, 6);
+struct Pin LED_PWR = PIN(A, 7);
+struct Pin LED_ACIN = PIN(C, 7);
+struct Pin LED_AIRPLANE_N = PIN(G, 6);
+
+struct Pin PWR_SW = PIN(D, 0);
+
+void parallel_write(unsigned char value) {
+    // Make sure clock is high
+    KSOH1 = 0xFF;
+    delay_ms(1);
+
+    // Set value
+    KSOL = value;
+    delay_ms(1);
+
+    // Set clock low
+    KSOH1 = 0;
+    pin_set(&LED_ACIN, true);
+    delay_ms(1);
+
+    // Set clock high again
+    pin_set(&LED_ACIN, false);
+    KSOH1 = 0xFF;
+}
+
+void puts(const char * s) {
+    char c;
+    while (c = *(s++)) {
+        parallel_write((unsigned char)c);
+    }
 }
 
 void main() {
@@ -158,9 +262,19 @@ void main() {
 
     //TODO: INTC, PECI, PWM, SMBUS
 
-    GPDRA |= (1 << 7);
+    // Set the battery full LED (to know our firmware is loaded)
+    pin_set(&LED_BAT_CHG, true);
+    delay_ms(1000);
+    pin_set(&LED_BAT_FULL, true);
+    puts("Hello from System76 EC!\n");
 
-    GPCRF0 = 0x40;
-    GPDRF |= (1 << 0);
-    for(;;) {}
+    bool last = false;
+    for(;;) {
+        // Check if the power switch goes low
+        bool new = pin_get(&PWR_SW);
+        if (!new && last) {
+            puts("Power Switch\n");
+        }
+        last = new;
+    }
 }
