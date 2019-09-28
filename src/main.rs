@@ -62,6 +62,9 @@ fn commands() -> CommandMap {
         eprintln!("step: {:04X}", mcu.pc);
         STEP.store(true, Ordering::SeqCst);
     });
+    command!("steps", "number of instructions executed", |ec: &mut Ec| {
+        eprintln!("steps: {}", ec.steps);
+    });
 
     command!("iram", "dump internal RAM", |ec: &mut Ec| {
         let mcu = ec.mcu.lock().unwrap();
@@ -126,6 +129,65 @@ fn commands() -> CommandMap {
     commands
 }
 
+fn timers(ec: &mut Ec) {
+    // Timer information from https://openlabpro.com/guide/timers-8051/
+    let mut tcon = ec.load(Addr::Reg(0x88));
+    let tmod = ec.load(Addr::Reg(0x89));
+
+    // Timer 0 running
+    if tcon & (1 << 4) != 0 {
+        if tmod & 0x0F != 0x01 {
+            panic!("unimplemented TMOD 0x{:02X}", tmod);
+        }
+
+        if ec.steps % 12 == 0 {
+            let tl = 0x8A;
+            let th = 0x8C;
+
+            let mut count =
+                ec.load(Addr::Reg(tl)) as u16 |
+                (ec.load(Addr::Reg(th)) as u16) << 8;
+
+            count = count.wrapping_add(1);
+
+            if count == 0 {
+                tcon |= (1 << 5);
+                //TODO: implement timer 0 interrupts
+            }
+
+            ec.store(Addr::Reg(tl), count as u8);
+            ec.store(Addr::Reg(th), (count >> 8) as u8);
+        }
+    }
+
+    if tcon & (1 << 6) != 0 {
+        if tmod & 0xF0 != 0x10 {
+            panic!("unimplemented TMOD 0x{:02X}", tmod);
+        }
+
+        if ec.steps % 12 == 0 {
+            let tl = 0x8B;
+            let th = 0x8D;
+
+            let mut count =
+                ec.load(Addr::Reg(tl)) as u16 |
+                (ec.load(Addr::Reg(th)) as u16) << 8;
+
+            count = count.wrapping_add(1);
+
+            if count == 0 {
+                tcon |= (1 << 5);
+                //TODO: implement timer 1 interrupts
+            }
+
+            ec.store(Addr::Reg(tl), count as u8);
+            ec.store(Addr::Reg(th), (count >> 8) as u8);
+        }
+    }
+
+    ec.store(Addr::Reg(0x88), tcon);
+}
+
 fn main() {
     ctrlc::set_handler(|| {
         RUNNING.store(false, Ordering::SeqCst);
@@ -187,10 +249,18 @@ fn main() {
                 panic!("unimplemented PCON 0x{:02X}", pcon);
             }
 
+            timers(&mut ec);
+
+            // if ec.steps % 1_000_000 == 0 {
+            //     println!("{}M steps", ec.steps / 1_000_000);
+            // }
+
             if ec.pc() == 0 {
                 eprintln!("reset!");
                 break;
             }
+
+            ec.steps += 1;
         }
 
         match con.read_line(

@@ -384,7 +384,15 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(" (KBSCAN 0x{:02X}", offset);
             match offset {
                 0x00 => debug!(" KSOL"),
-                0x01 => debug!(" KSOH1"),
+                0x01 => {
+                    debug!(" KSOH1");
+                    if let Some(new) = new_opt {
+                        if new & 1 == 0 {
+                            let byte = mcu.xram[0x1D00];
+                            print!("{}", byte as char);
+                        }
+                    }
+                },
                 0x02 => debug!(" KSOCTRL"),
                 0x03 => debug!(" KSOH2"),
                 0x04 => debug!(" KSI"),
