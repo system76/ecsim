@@ -193,6 +193,24 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x00 => debug!(" KBHICR"),
                 0x02 => debug!(" KBIRQR"),
                 0x04 => debug!(" KBHISR"),
+                0x06 => {
+                    debug!(" KBHIKDOR");
+                    //TODO: Enforce write-only
+                    // Set output buffer full flag
+                    mcu.xram[0x1304] |= 1 << 0;
+                },
+                0x08 => {
+                    debug!(" KBHIMDOR");
+                    //TODO: Enforce write-only
+                    // Set output buffer full flag
+                    mcu.xram[0x1304] |= 1 << 0;
+                },
+                0x0A => {
+                    debug!(" KBHIDIR");
+                    //TODO: Enforce read-only
+                    // Clear input buffer full flag
+                    mcu.xram[0x1304] &= !(1 << 1);
+                }
                 _ => panic!("xram unimplemented KBC register 0x{:02X}", offset)
             }
             debug!(")");

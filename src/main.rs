@@ -4,6 +4,8 @@ use std::collections::{BTreeMap, HashMap};
 use std::net::UdpSocket;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+pub (crate) mod cmd;
+
 pub use self::ec::Ec;
 mod ec;
 
@@ -104,79 +106,16 @@ fn commands() -> CommandMap {
         }
     });
 
-    command!("int", "trigger interrupt (one argument from 0 to 5)", |ec: &mut Ec, args: &[&str]| {
-        if args.len() != 1 {
-            eprintln!("int [argument from 0 to 5]");
-            return;
-        }
+    command!("int", "trigger interrupt (one argument from 0 to 5)", cmd::int::int);
 
-        let int = match u8::from_str_radix(&args[0], 10) {
-            Ok(ok) => if ok <= 5 {
-                ok
-            } else {
-                eprintln!("argument '{}' greater than 5", args[0]);
-                eprintln!("int [argument from 0 to 5]");
-                return;
-            },
-            Err(err) => {
-                eprintln!("argument '{}' failed to parse: {}", args[0], err);
-                eprintln!("int [argument from 0 to 5]");
-                return;
-            }
-        };
+    command!("kbc_cmd", "send kbc command (one argument in hex)", cmd::kbc::cmd);
+    command!("kbc_keyboard", "read kbc keyboard data (as hex)", cmd::kbc::keyboard);
+    command!("kbc_mouse", "read kbc mouse data (as hex)", cmd::kbc::mouse);
+    command!("kbc_write", "send kbc data (one argument in hex)", cmd::kbc::write);
 
-        let mut mcu = ec.mcu.lock().unwrap();
-        let pc = mcu.pc();
-        mcu.push_sp(pc as u8);
-        mcu.push_sp((pc >> 8) as u8);
-        mcu.set_pc(0x0003 + (int as u16) * 8);
-    });
-
-    command!("pmc_cmd", "send pmc command (one argument in hex)", |ec: &mut Ec, args: &[&str]| {
-        if args.len() != 1 {
-            eprintln!("pmc_cmd [argument in hex]");
-            return;
-        }
-
-        let data = match u8::from_str_radix(&args[0], 16) {
-            Ok(ok) => ok,
-            Err(err) => {
-                eprintln!("argument '{}' failed to parse as hex: {}", args[0], err);
-                eprintln!("pmc_cmd [argument in hex]");
-                return;
-            }
-        };
-
-        let mut mcu = ec.mcu.lock().unwrap();
-        mcu.xram[0x1500] |= (1 << 3) | (1 << 1);
-        mcu.xram[0x1504] = data;
-    });
-    command!("pmc_read", "read pmc data (as hex)", |ec: &mut Ec, args: &[&str]| {
-        let mut mcu = ec.mcu.lock().unwrap();
-        if mcu.xram[0x1500] & 1 != 0 {
-            eprintln!("{:02X}", mcu.xram[0x1501]);
-            mcu.xram[0x1500] &= !1;
-        }
-    });
-    command!("pmc_write", "send pmc data (one argument in hex)", |ec: &mut Ec, args: &[&str]| {
-        if args.len() != 1 {
-            eprintln!("pmc_write [hex argument]");
-            return;
-        }
-
-        let data = match u8::from_str_radix(&args[0], 16) {
-            Ok(ok) => ok,
-            Err(err) => {
-                eprintln!("argument '{}' failed to parse as hex: {}", args[0], err);
-                eprintln!("pmc_write [hex argument]");
-                return;
-            }
-        };
-
-        let mut mcu = ec.mcu.lock().unwrap();
-        mcu.xram[0x1500] |= 1 << 1;
-        mcu.xram[0x1504] = data;
-    });
+    command!("pmc_cmd", "send pmc command (one argument in hex)", cmd::pmc::cmd);
+    command!("pmc_read", "read pmc data (as hex)", cmd::pmc::read);
+    command!("pmc_write", "send pmc data (one argument in hex)", cmd::pmc::write);
 
     command_help.insert("help", "show command information");
     commands.insert("help", Box::new(move |_, args: &[&str]| {
@@ -196,7 +135,7 @@ fn timers(ec: &mut Ec) {
     let tmod = ec.load(Addr::Reg(0x89));
 
     // Timer 0 running
-    if tcon & (1 << 4) != 0 {
+    if tcon & 1 << 4 != 0 {
         if tmod & 0x0F != 0x01 {
             panic!("unimplemented TMOD 0x{:02X}", tmod);
         }
@@ -212,7 +151,7 @@ fn timers(ec: &mut Ec) {
             count = count.wrapping_add(1);
 
             if count == 0 {
-                tcon |= (1 << 5);
+                tcon |= 1 << 5;
                 //TODO: implement timer 0 interrupts
             }
 
@@ -221,7 +160,7 @@ fn timers(ec: &mut Ec) {
         }
     }
 
-    if tcon & (1 << 6) != 0 {
+    if tcon & 1 << 6 != 0 {
         if tmod & 0xF0 != 0x10 {
             panic!("unimplemented TMOD 0x{:02X}", tmod);
         }
@@ -237,7 +176,7 @@ fn timers(ec: &mut Ec) {
             count = count.wrapping_add(1);
 
             if count == 0 {
-                tcon |= (1 << 5);
+                tcon |= 1 << 5;
                 //TODO: implement timer 1 interrupts
             }
 
