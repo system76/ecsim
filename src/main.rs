@@ -16,7 +16,7 @@ mod spi;
 pub use self::xram::xram;
 mod xram;
 
-type CommandMap = HashMap<&'static str, Box<dyn Fn(&mut Ec)>>;
+type CommandMap = HashMap<&'static str, Box<dyn Fn(&mut Ec, &[&str])>>;
 
 struct Completer<'a> {
     commands: &'a CommandMap
@@ -49,24 +49,33 @@ fn commands() -> CommandMap {
         });
     }
 
-    command!("continue", "continue execution", |_| {
+    command!("continue", "continue execution", |_, _| {
         eprintln!("continuing...");
         RUNNING.store(true, Ordering::SeqCst);
     });
-    command!("quit", "quit program", |_| {
+    command!("echo", "print arguments", |_, args: &[&str]| {
+        for (i, arg) in args.iter().enumerate() {
+            if i != 0 {
+                eprint!(" ");
+            }
+            eprint!("{}", arg);
+        }
+        eprintln!();
+    });
+    command!("quit", "quit program", |_, _| {
         eprintln!("quiting...");
         QUIT.store(true, Ordering::SeqCst);
     });
-    command!("step", "execute one instruction", |ec: &mut Ec| {
+    command!("step", "execute one instruction", |ec: &mut Ec, _| {
         let mcu = ec.mcu.lock().unwrap();
         eprintln!("step: {:04X}", mcu.pc);
         STEP.store(true, Ordering::SeqCst);
     });
-    command!("steps", "number of instructions executed", |ec: &mut Ec| {
+    command!("steps", "number of instructions executed", |ec: &mut Ec, _| {
         eprintln!("steps: {}", ec.steps);
     });
 
-    command!("iram", "dump internal RAM", |ec: &mut Ec| {
+    command!("iram", "dump internal RAM", |ec: &mut Ec, _| {
         let mcu = ec.mcu.lock().unwrap();
         eprintln!("iram:");
         for row in 0..mcu.iram.len() / 16 {
@@ -78,11 +87,11 @@ fn commands() -> CommandMap {
             eprintln!();
         }
     });
-    command!("pc", "show program counter", |ec: &mut Ec| {
+    command!("pc", "show program counter", |ec: &mut Ec, _| {
         let mcu = ec.mcu.lock().unwrap();
         eprintln!("pc: {:04X}", mcu.pc);
     });
-    command!("xram", "dump external RAM", |ec: &mut Ec| {
+    command!("xram", "dump external RAM", |ec: &mut Ec, _| {
         let mcu = ec.mcu.lock().unwrap();
         eprintln!("xram:");
         for row in 0..mcu.xram.len() / 16 {
@@ -95,34 +104,86 @@ fn commands() -> CommandMap {
         }
     });
 
-    command!("int0", "trigger INT0", |ec: &mut Ec| {
+    command!("int", "trigger interrupt (one argument from 0 to 5)", |ec: &mut Ec, args: &[&str]| {
+        if args.len() != 1 {
+            eprintln!("int [argument from 0 to 5]");
+            return;
+        }
+
+        let int = match u8::from_str_radix(&args[0], 10) {
+            Ok(ok) => if ok <= 5 {
+                ok
+            } else {
+                eprintln!("argument '{}' greater than 5", args[0]);
+                eprintln!("int [argument from 0 to 5]");
+                return;
+            },
+            Err(err) => {
+                eprintln!("argument '{}' failed to parse: {}", args[0], err);
+                eprintln!("int [argument from 0 to 5]");
+                return;
+            }
+        };
+
         let mut mcu = ec.mcu.lock().unwrap();
         let pc = mcu.pc();
         mcu.push_sp(pc as u8);
         mcu.push_sp((pc >> 8) as u8);
-        mcu.set_pc(0x0003);
+        mcu.set_pc(0x0003 + (int as u16) * 8);
     });
 
-    command!("int1", "trigger INT1", |ec: &mut Ec| {
-        let mut mcu = ec.mcu.lock().unwrap();
-        // INTC INT11
-        mcu.xram[0x1110] = 0x10 + 11;
-        let pc = mcu.pc();
-        mcu.push_sp(pc as u8);
-        mcu.push_sp((pc >> 8) as u8);
-        mcu.set_pc(0x0013);
-    });
+    command!("pmc_cmd", "send pmc command (one argument in hex)", |ec: &mut Ec, args: &[&str]| {
+        if args.len() != 1 {
+            eprintln!("pmc_cmd [argument in hex]");
+            return;
+        }
 
-    command!("0x9A", "send 0x9A command", |ec: &mut Ec| {
+        let data = match u8::from_str_radix(&args[0], 16) {
+            Ok(ok) => ok,
+            Err(err) => {
+                eprintln!("argument '{}' failed to parse as hex: {}", args[0], err);
+                eprintln!("pmc_cmd [argument in hex]");
+                return;
+            }
+        };
+
         let mut mcu = ec.mcu.lock().unwrap();
         mcu.xram[0x1500] |= (1 << 3) | (1 << 1);
-        mcu.xram[0x1504] = 0x9A;
+        mcu.xram[0x1504] = data;
+    });
+    command!("pmc_read", "read pmc data (as hex)", |ec: &mut Ec, args: &[&str]| {
+        let mut mcu = ec.mcu.lock().unwrap();
+        if mcu.xram[0x1500] & 1 != 0 {
+            eprintln!("{:02X}", mcu.xram[0x1501]);
+            mcu.xram[0x1500] &= !1;
+        }
+    });
+    command!("pmc_write", "send pmc data (one argument in hex)", |ec: &mut Ec, args: &[&str]| {
+        if args.len() != 1 {
+            eprintln!("pmc_write [hex argument]");
+            return;
+        }
+
+        let data = match u8::from_str_radix(&args[0], 16) {
+            Ok(ok) => ok,
+            Err(err) => {
+                eprintln!("argument '{}' failed to parse as hex: {}", args[0], err);
+                eprintln!("pmc_write [hex argument]");
+                return;
+            }
+        };
+
+        let mut mcu = ec.mcu.lock().unwrap();
+        mcu.xram[0x1500] |= 1 << 1;
+        mcu.xram[0x1504] = data;
     });
 
     command_help.insert("help", "show command information");
-    commands.insert("help", Box::new(move |_| {
+    commands.insert("help", Box::new(move |_, args: &[&str]| {
         for (name, help) in &command_help {
-            eprintln!("  - {} - {}", name, help);
+            if args.is_empty() || args.contains(name) {
+                eprintln!("  - {} - {}", name, help);
+            }
         }
     }));
 
@@ -271,15 +332,17 @@ fn main() {
             }
         ) {
             Ok(ok) => {
-                if let Some(func) = commands.get(ok.as_str()) {
-                    func(&mut ec);
-                } else if ok.is_empty() {
-                    // Ignore empty lines
-                } else {
-                    eprintln!("unknown command: {}", ok);
-                }
+                let mut parts = ok.split(' ').filter(|x| ! x.is_empty());
+                if let Some(command) = parts.next() {
+                    if let Some(func) = commands.get(command) {
+                        let args: Vec<&str> = parts.collect();
+                        func(&mut ec, &args);
+                    } else {
+                        eprintln!("unknown command: {}", ok);
+                    }
 
-                con.history.push(ok.into()).unwrap();
+                    con.history.push(ok.into()).unwrap();
+                }
             },
             Err(err) => match err.kind() {
                 io::ErrorKind::Interrupted => {
