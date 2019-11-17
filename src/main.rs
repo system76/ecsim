@@ -249,6 +249,16 @@ fn main() {
                 panic!("unimplemented PCON 0x{:02X}", pcon);
             }
 
+            // Serial bus
+            let s = ec.load(Addr::Reg(0x98));
+            let b = ec.load(Addr::Reg(0x99));
+            if b > 0 {
+                print!("{}", b as char);
+                ec.store(Addr::Reg(0x98), s | (1 << 1));
+                ec.store(Addr::Reg(0x99), 0);
+            }
+
+
             timers(&mut ec);
 
             // if ec.steps % 1_000_000 == 0 {
