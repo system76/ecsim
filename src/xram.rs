@@ -261,6 +261,30 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x0A => debug!(" GPDRJ"),
                 0x0D => debug!(" GPDRM"),
 
+                0x61 => debug!(" GPDRA"),
+                0x62 => debug!(" GPDRB"),
+                0x63 => debug!(" GPDRC"),
+                0x64 => debug!(" GPDRD"),
+                0x65 => debug!(" GPDRE"),
+                0x66 => debug!(" GPDRF"),
+                0x67 => debug!(" GPDRG"),
+                0x68 => debug!(" GPDRH"),
+                0x69 => debug!(" GPDRI"),
+                0x6A => debug!(" GPDRJ"),
+                0x6D => debug!(" GPDRM"),
+
+                0x71 => debug!(" GPOTA"),
+                0x72 => debug!(" GPOTB"),
+                0x73 => debug!(" GPOTC"),
+                0x74 => debug!(" GPOTD"),
+                0x75 => debug!(" GPOTE"),
+                0x76 => debug!(" GPOTF"),
+                0x77 => debug!(" GPOTG"),
+                0x78 => debug!(" GPOTH"),
+                0x79 => debug!(" GPOTI"),
+                0x7A => debug!(" GPOTJ"),
+                0x7D => debug!(" GPOTM"),
+
                 0x10 ..= 0x17 => debug!(" GPCRA{}", offset - 0x10),
                 0x18 ..= 0x1F => debug!(" GPCRB{}", offset - 0x18),
                 0x20 ..= 0x27 => debug!(" GPCRC{}", offset - 0x20),
@@ -304,6 +328,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let offset = address - base;
             debug!(" (PWM 0x{:02X}", offset);
             match offset {
+                0x00 => debug!(" C0CPRS"),
                 0x01 => debug!(" CTR0"),
                 0x02 ..= 0x09 => debug!(" DCR{}", offset - 0x02),
                 0x0B => debug!(" PCFSR"),
@@ -318,6 +343,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x2E => debug!(" C7MCPRS"),
                 0x40 => debug!(" CLK6MSEL"),
                 0x43 => debug!(" CTR3"),
+                0x48 => debug!(" TSWCTLR"),
                 _ => panic!("xram unimplemented PWM register 0x{:02X}", offset)
             }
             debug!(")");
@@ -368,6 +394,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x03 => debug!(" TRASLAA"),
                 0x04 => debug!(" D0REGA"),
                 0x05 => debug!(" D1REGA"),
+                0x06 => debug!(" HOBDBA"),
                 0x10 => debug!(" HOCTL2A"),
                 0x11 => debug!(" HOSTAB"),
                 0x12 => debug!(" HOCTLB"),
