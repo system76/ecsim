@@ -195,7 +195,12 @@ fn main() {
 
     let pmem_path = env::args().nth(1).unwrap_or("ec.rom".to_string());
 
-    let pmem = fs::read(&pmem_path).expect("failed to read ec.rom");
+    let mut pmem = fs::read(&pmem_path).expect("failed to read ec.rom");
+
+    // Fill program memory to 128 KiB
+    while pmem.len() < 128 * 1024 {
+        pmem.push(0xFF);
+    }
 
     let xmem = pmem.clone();
 
@@ -267,7 +272,7 @@ fn main() {
 
             if ec.pc() == 0 {
                 eprintln!("reset!");
-                break;
+                //RUNNING.store(false, Ordering::SeqCst);
             }
 
             ec.steps += 1;
