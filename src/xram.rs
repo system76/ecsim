@@ -140,6 +140,8 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                         }
                     }
                 },
+                0x46 => debug!(" SCAR2L"),
+                0x47 => debug!(" SCAR2M"),
                 0x48 => {
                     debug!(" SCAR2H");
                     if let Some(new) = new_opt {
@@ -148,6 +150,8 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                         }
                     }
                 },
+                0x49 => debug!(" SCAR3L"),
+                0x4A => debug!(" SCAR3M"),
                 0x4B => {
                     debug!(" SCAR3H");
                     if let Some(new) = new_opt {
@@ -156,6 +160,8 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                         }
                     }
                 },
+                0x4C => debug!(" SCAR4L"),
+                0x4D => debug!(" SCAR4M"),
                 0x4E => {
                     debug!(" SCAR4H");
                     if let Some(new) = new_opt {

@@ -12,6 +12,7 @@ macro_rules! debug {
 
 pub struct Spi {
     pub write: bool,
+    pub fast_read_addr: Option<usize>,
     pub aai_addr: Option<usize>,
     pub input: VecDeque<u8>,
     pub output: VecDeque<u8>,
@@ -21,6 +22,7 @@ impl Spi {
     pub fn new() -> Self {
         Self {
             write: false,
+            fast_read_addr: None,
             aai_addr: None,
             input: VecDeque::new(),
             output: VecDeque::new(),
@@ -30,6 +32,8 @@ impl Spi {
     pub fn step(&mut self, flash: &mut [u8], flash_name: &str) {
         if let Some(command) = self.input.pop_front() {
             debug!("\n[spi {}", flash_name);
+
+            self.fast_read_addr = None;
 
             match command {
                 0x01 => {
@@ -80,14 +84,32 @@ impl Spi {
                     debug!(" write enable");
                     self.write = true;
                 },
+                0x0B => {
+                    debug!(" fast read");
+
+                    let a2 = self.input.pop_front().expect("spi fast read value missing");
+                    let a1 = self.input.pop_front().expect("spi fast read value missing");
+                    let a0 = self.input.pop_front().expect("spi fast read value missing");
+                    let _d = self.input.pop_front().expect("spi fast read value missing");
+
+                    let address = {
+                        (a0 as usize) |
+                        (a1 as usize) << 8 |
+                        (a2 as usize) << 16
+                    };
+
+                    debug!(" 0x{:06X}", address);
+
+                    self.fast_read_addr = Some(address);
+                },
                 0x50 => {
                     debug!(" write volatile status register");
                     // TODO
                 },
                 0x60 => {
                     debug!(" chip erase");
-                    for b in flash.iter_mut() {
-                        *b = 0xFF;
+                    for i in 0..flash.len() {
+                        flash[i] = 0xFF;
                     }
                 },
                 0x9F => {
@@ -137,8 +159,8 @@ impl Spi {
 
                     debug!(" 0x{:06X}", addr);
 
-                    for b in flash[addr..addr + 256].iter_mut() {
-                        *b = 0xFF;
+                    for i in addr..addr + 256 {
+                        flash[i] = 0xFF;
                     }
                 },
                 _ => {
@@ -149,6 +171,14 @@ impl Spi {
             assert_eq!(self.input.len(), 0);
 
             debug!("]");
+        }
+
+        if let Some(mut address) = self.fast_read_addr.take() {
+            self.output.push_back(flash[address]);
+            address += 1;
+            if address < flash.len() {
+                self.fast_read_addr = Some(address);
+            }
         }
     }
 }
