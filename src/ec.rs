@@ -26,14 +26,20 @@ impl Ec {
         }
     }
 
-    pub fn scar() -> &'static [(usize, usize, usize)] {
-        &[
-            (0x1040, 0x0000, 2048),
-            (0x1043, 0x0800, 1024),
-            (0x1046, 0x0C00, 512),
-            (0x1049, 0x0E00, 256),
-            (0x104C, 0x0F00, 256)
-        ]
+    pub fn scar(&self) -> &'static [(usize, usize, usize)] {
+        match self.id {
+            0x5570 => &[
+                (0x1040, 0x0000, 4096),
+            ],
+            0x8587 => &[
+                (0x1040, 0x0000, 2048),
+                (0x1043, 0x0800, 1024),
+                (0x1046, 0x0C00, 512),
+                (0x1049, 0x0E00, 256),
+                (0x104C, 0x0F00, 256)
+            ],
+            _ => panic!("Ec::scar not implemented for {:04X}", self.id)
+        }
     }
 }
 
@@ -59,7 +65,7 @@ impl Mem for Ec {
                     i as usize
                 };
 
-                for &(reg, base, size) in Self::scar() {
+                for &(reg, base, size) in self.scar() {
                     let l = mcu.xram[reg];
                     let m = mcu.xram[reg + 1];
                     let h = mcu.xram[reg + 2];
@@ -114,7 +120,7 @@ impl Isa for Ec {
         mcu.reset();
 
         // Disable SCAR
-        for (reg, _, _) in Self::scar() {
+        for (reg, _, _) in self.scar() {
             mcu.xram[reg + 2] = 0b11;
         }
 

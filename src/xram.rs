@@ -28,6 +28,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
         },
         0x8000 ..= 0x97FF if ec.id == 0x5570 => {
             debug!(" (SRAM)");
+            //TODO: SRAM is double mapped from 0x8000 - 0x8FFF
         },
         // SMFI
         0x1000 ..= 0x10FF => {
@@ -36,7 +37,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(" (SMFI 0x{:02X}", offset);
 
             let mut scar_dma = |scar| {
-                let (reg, base, size) = Ec::scar()[scar];
+                let (reg, base, size) = ec.scar()[scar];
 
                 let l = mcu.xram[reg];
                 let m = mcu.xram[reg + 1];
@@ -133,9 +134,9 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                         }
                     }
                 },
-                0x43 => debug!(" SCAR1L"),
-                0x44 => debug!(" SCAR1M"),
-                0x45 => {
+                0x43 if ec.id == 0x8587 => debug!(" SCAR1L"),
+                0x44 if ec.id == 0x8587 => debug!(" SCAR1M"),
+                0x45 if ec.id == 0x8587 => {
                     debug!(" SCAR1H");
                     if let Some(new) = new_opt {
                         if old & 0x80 != 0 && new & 0x80 == 0 {
@@ -143,9 +144,9 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                         }
                     }
                 },
-                0x46 => debug!(" SCAR2L"),
-                0x47 => debug!(" SCAR2M"),
-                0x48 => {
+                0x46 if ec.id == 0x8587 => debug!(" SCAR2L"),
+                0x47 if ec.id == 0x8587 => debug!(" SCAR2M"),
+                0x48 if ec.id == 0x8587 => {
                     debug!(" SCAR2H");
                     if let Some(new) = new_opt {
                         if old & 0x80 != 0 && new & 0x80 == 0 {
@@ -153,9 +154,9 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                         }
                     }
                 },
-                0x49 => debug!(" SCAR3L"),
-                0x4A => debug!(" SCAR3M"),
-                0x4B => {
+                0x49 if ec.id == 0x8587 => debug!(" SCAR3L"),
+                0x4A if ec.id == 0x8587 => debug!(" SCAR3M"),
+                0x4B if ec.id == 0x8587 => {
                     debug!(" SCAR3H");
                     if let Some(new) = new_opt {
                         if old & 0x80 != 0 && new & 0x80 == 0 {
@@ -163,9 +164,9 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                         }
                     }
                 },
-                0x4C => debug!(" SCAR4L"),
-                0x4D => debug!(" SCAR4M"),
-                0x4E => {
+                0x4C if ec.id == 0x8587 => debug!(" SCAR4L"),
+                0x4D if ec.id == 0x8587 => debug!(" SCAR4M"),
+                0x4E if ec.id == 0x8587 => {
                     debug!(" SCAR4H");
                     if let Some(new) = new_opt {
                         if old & 0x80 != 0 && new & 0x80 == 0 {
@@ -423,6 +424,8 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x3E => debug!(" HOCTL2D"),
                 0xA0 if ec.id == 0x5570 => debug!(" HOSTAE"),
                 0xA1 if ec.id == 0x5570 => debug!(" HOCTLE"),
+                0xA3 if ec.id == 0x5570 => debug!(" TRASLAE"),
+                0xA7 if ec.id == 0x5570 => debug!(" HOBDBE"),
                 0xAA if ec.id == 0x5570 => debug!(" HOCTL2E"),
                 0xB0 if ec.id == 0x5570 => debug!(" HOSTAF"),
                 0xB1 if ec.id == 0x5570 => debug!(" HOCTLF"),
