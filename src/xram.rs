@@ -26,6 +26,9 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
         0x0000 ..= 0x0FFF => {
             debug!(" (SRAM)");
         },
+        0x8000 ..= 0x97FF if ec.id == 0x5570 => {
+            debug!(" (SRAM)");
+        },
         // SMFI
         0x1000 ..= 0x10FF => {
             let base = 0x1000;
