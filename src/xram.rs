@@ -388,6 +388,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             match offset {
                 0x00 => debug!(" UNKNOWN"),
                 0x01 => debug!(" DACPDREG"),
+                0x04 => debug!(" DACDAT2"),
                 _ => panic!("xram unimplemented DAC register 0x{:02X}", offset)
             }
             debug!(")");
