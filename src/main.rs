@@ -205,8 +205,8 @@ fn main() {
     let xmem = pmem.clone();
 
     let mut ec = Ec::new(
-        //0x5570, 0x01, // IT5570 (B Version)
-        0x8587, 0x06, // IT8587E/VG (F Version)
+        0x5570, 0x01, // IT5570 (B Version)
+        //0x8587, 0x06, // IT8587E/VG (F Version)
         pmem.into_boxed_slice(),
         xmem.into_boxed_slice()
     );
