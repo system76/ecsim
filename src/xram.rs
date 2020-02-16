@@ -469,6 +469,19 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             }
             debug!(")");
         },
+        // EC power management
+        0x1E00 ..= 0x1EFF => {
+            let base = 0x1E00;
+            let offset = address - base;
+            debug!(" (ECPM 0x{:02X}", offset);
+            match offset {
+                0x02 => debug!(" CGCTRL2"),
+                0x05 => debug!(" CGCTRL3"),
+                0x09 => debug!(" CGCTRL4"),
+                _ => panic!("xram unimplemented ECPM register 0x{:02X}", offset)
+            }
+            debug!(")");
+        },
         // General Control
         0x2000 ..= 0x20FF => {
             let base = 0x2000;
