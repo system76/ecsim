@@ -423,6 +423,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x35 => debug!(" HOSTAD"),
                 0x36 => debug!(" HOCTLD"),
                 0x3E => debug!(" HOCTL2D"),
+                0x41 => debug!(" SCLKTSB"),
                 0xA0 if ec.id == 0x5570 => debug!(" HOSTAE"),
                 0xA1 if ec.id == 0x5570 => debug!(" HOCTLE"),
                 0xA3 if ec.id == 0x5570 => debug!(" TRASLAE"),
