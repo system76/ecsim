@@ -190,6 +190,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x05 => debug!(" IER1"),
                 0x07 => debug!(" IER3"),
                 0x10 => debug!(" IVECT"),
+                0x51 => debug!(" IER19"),
                 _ => panic!("xram unimplemented INTC register 0x{:02X}", offset)
             }
             debug!(")");
@@ -305,7 +306,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x48 ..= 0x4F => debug!(" GPCRH{}", offset - 0x48),
                 0x50 ..= 0x57 => debug!(" GPCRI{}", offset - 0x50),
                 0x58 ..= 0x5F => debug!(" GPCRJ{}", offset - 0x58),
-                0xA0 ..= 0xA6 => debug!(" GPCRM{}", offset - 0xA0),
+                0xA0 ..= 0xA7 => debug!(" GPCRM{}", offset - 0xA0),
 
                 0xF0 ..= 0xFE => debug!(" GCR{}", offset - 0xF0 + 1),
                 0xE0 ..= 0xE2 => debug!(" GCR{}", offset - 0xE0 + 16),
@@ -515,6 +516,25 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x08 => debug!(" HOCTL2R"),
                 0x0E => debug!(" PADCTLR"),
                 _ => panic!("xram unimplemented PECI register 0x{:02X}", offset)
+            }
+            debug!(")");
+        },
+        // eSPI
+        0x3100 ..= 0x32FF if ec.id == 0x5570 => {
+            let base = 0x3100;
+            let offset = address - base;
+            debug!(" (eSPI 0x{:02X}", offset);
+            match offset {
+                // Peripheral
+                0x04 => debug!(" General Capabilities and Configurations 0"),
+                0x05 => debug!(" General Capabilities and Configurations 1"),
+                0x06 => debug!(" General Capabilities and Configurations 2"),
+                0x07 => debug!(" General Capabilities and Configurations 3"),
+                0xA1 => debug!(" ESGCTRL1"),
+                0xA2 => debug!(" ESGCTRL2"),
+                // Virtual wire
+                0x190 => debug!(" VWCTRL0"),
+                _ => panic!("xram unimplemented eSPI register 0x{:02X}", offset)
             }
             debug!(")");
         },
