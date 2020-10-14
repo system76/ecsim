@@ -93,16 +93,42 @@ fn commands() -> CommandMap {
         let mcu = ec.mcu.lock().unwrap();
         eprintln!("pc: {:04X}", mcu.pc);
     });
-    command!("xram", "dump external RAM", |ec: &mut Ec, _| {
-        let mcu = ec.mcu.lock().unwrap();
-        eprintln!("xram:");
-        for row in 0..mcu.xram.len() / 16 {
-            let row_offset = row * 16;
-            eprint!("{:04X}:", row_offset);
-            for col in 0..16 {
-                eprint!(" {:02X}", mcu.xram[row_offset + col]);
+    command!("xram", "dump external RAM", |ec: &mut Ec, args: &[&str]| {
+        let mut mcu = ec.mcu.lock().unwrap();
+        if let Some(arg0) = args.get(0) {
+            let addr = match u16::from_str_radix(arg0, 16) {
+                Ok(ok) => ok as usize,
+                Err(err) => {
+                    eprintln!("invalid address '{}': {}", arg0, err);
+                    return;
+                },
+            };
+
+            eprintln!("xram {:04X}: {:02X}", addr, mcu.xram[addr]);
+
+            if let Some(arg1) = args.get(1) {
+                let value = match u8::from_str_radix(arg1, 16) {
+                    Ok(ok) => ok,
+                    Err(err) => {
+                        eprintln!("invalid value '{}': {}", arg1, err);
+                        return;
+                    },
+                };
+
+                mcu.xram[addr] = value;
+                
+                eprintln!("xram {:04X}: {:02X}", addr, mcu.xram[addr]);
             }
-            eprintln!();
+        } else {
+            eprintln!("xram:");
+            for row in 0..mcu.xram.len() / 16 {
+                let row_offset = row * 16;
+                eprint!("{:04X}:", row_offset);
+                for col in 0..16 {
+                    eprint!(" {:02X}", mcu.xram[row_offset + col]);
+                }
+                eprintln!();
+            }
         }
     });
 
@@ -251,7 +277,7 @@ fn main() {
             // Check pcon for idle or power down
             let pcon = ec.load(Addr::Reg(0x87));
             if (pcon & 0b11) != 0 {
-                panic!("unimplemented PCON 0x{:02X}", pcon);
+                //panic!("unimplemented PCON 0x{:02X}", pcon);
             }
 
             // Serial bus
