@@ -526,10 +526,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(" (eSPI 0x{:02X}", offset);
             match offset {
                 // Peripheral
-                0x04 => debug!(" General Capabilities and Configurations 0"),
-                0x05 => debug!(" General Capabilities and Configurations 1"),
-                0x06 => debug!(" General Capabilities and Configurations 2"),
-                0x07 => debug!(" General Capabilities and Configurations 3"),
+                0x04 => debug!(" General Capabilities and Configurations 3"),
+                0x05 => debug!(" General Capabilities and Configurations 2"),
+                0x06 => debug!(" General Capabilities and Configurations 1"),
+                0x07 => debug!(" General Capabilities and Configurations 0"),
                 0xA1 => debug!(" ESGCTRL1"),
                 0xA2 => debug!(" ESGCTRL2"),
                 // Virtual wire
