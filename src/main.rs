@@ -186,6 +186,7 @@ fn timers(ec: &mut Ec) {
         }
     }
 
+    // Timer 1 running
     if tcon & 1 << 6 != 0 {
         if tmod & 0xF0 != 0x10 {
             panic!("unimplemented TMOD 0x{:02X}", tmod);
@@ -202,7 +203,7 @@ fn timers(ec: &mut Ec) {
             count = count.wrapping_add(1);
 
             if count == 0 {
-                tcon |= 1 << 5;
+                tcon |= 1 << 7;
                 //TODO: implement timer 1 interrupts
             }
 
