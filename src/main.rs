@@ -251,7 +251,7 @@ fn main() {
     while ! QUIT.load(Ordering::SeqCst) {
         while STEP.swap(false, Ordering::SeqCst) || RUNNING.load(Ordering::SeqCst) {
             if let Some(ref mut socket) = socket_opt {
-                let mut request = [0x00; 3];
+                let mut request = [0x00; 4];
                 match socket.recv_from(&mut request) {
                     Ok((count, addr)) => if count >= request.len() {
                         let response = socket_op(&mut ec, &request);

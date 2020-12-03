@@ -9,8 +9,8 @@ mod support;
 const STATUS_IBF: u8 = 1 << 1;
 const STATUS_OBF: u8 = 1 << 0;
 
-const PMC_STATUS: u8 = 0x66;
-const PMC_DATA: u8 = 0x62;
+const PMC_STATUS: u16 = 0x66;
+const PMC_DATA: u16 = 0x62;
 
 fn pmc_cmd(cmd: u8) -> io::Result<()> {
     //TODO: timeout

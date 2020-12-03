@@ -10,18 +10,20 @@ macro_rules! debug {
     ($($arg:tt)*) => (());
 }
 
-pub fn socket_op(ec: &mut Ec, request: &[u8; 3]) -> [u8; 1] {
+pub fn socket_op(ec: &mut Ec, request: &[u8; 4]) -> [u8; 1] {
     debug!("\n[socket");
 
     let mut response = [0x00];
     match request[0] {
+        // init
         0x00 => {
             debug!(" init");
         },
+        // inb
         0x01 => {
-            let port = request[1];
+            let port = u16::from_le_bytes([request[1], request[2]]);
             let mut value = 0;
-            debug!(" read 0x{:02X}", port);
+            debug!(" read 0x{:04X}", port);
             match port {
                 0x2e => {
                     debug!(" (super io address)");
@@ -61,10 +63,11 @@ pub fn socket_op(ec: &mut Ec, request: &[u8; 3]) -> [u8; 1] {
             debug!(" = 0x{:02X}", value);
             response[0] = value;
         },
+        // outb
         0x02 => {
-            let port = request[1];
-            let value = request[2];
-            debug!(" write 0x{:02X}, 0x{:02X}", port, value);
+            let port = u16::from_le_bytes([request[1], request[2]]);
+            let value = request[3];
+            debug!(" write 0x{:04X}, 0x{:02X}", port, value);
             match port {
                 0x2e => {
                     debug!(" (super io address)");
