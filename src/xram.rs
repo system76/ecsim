@@ -175,6 +175,11 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                     }
                 },
                 0x58 => debug!(" HINSTC1"),
+                0x5A => debug!(" HRAMWC"),
+                0x5B => debug!(" HRAMW0BA"),
+                0x5C => debug!(" HRAMW1BA"),
+                0x5D => debug!(" HRAMW0AAS"),
+                0x5E => debug!(" HRAMW1AAS"),
                 0x63 => debug!(" FLHCTRL3R"),
                 _ => panic!("xram unimplemented SMFI register 0x{:02X}", offset)
             }
@@ -497,6 +502,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x0A => debug!(" BADRSEL"),
                 0x0B => debug!(" WNCKR"),
                 0x0D => debug!(" SPCTRL1"),
+                0x30 => debug!(" P80H81HS"),
                 _ => panic!("xram unimplemented GCTRL register 0x{:02X}", offset)
             }
             debug!(")");
@@ -513,7 +519,16 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let offset = address - base;
             debug!(" (PECI 0x{:02X}", offset);
             match offset {
+                0x00 => debug!(" HOSTAR"),
+                0x01 => debug!(" HOCTLR"),
+                0x02 => debug!(" HOCMDR"),
+                0x03 => debug!(" HOTRADDR"),
+                0x04 => debug!(" HOWRLR"),
+                0x05 => debug!(" HORDLR"),
+                0x06 => debug!(" HOWRDR"),
+                0x07 => debug!(" HORDDR"),
                 0x08 => debug!(" HOCTL2R"),
+                0x09 => debug!(" RWFCSV"),
                 0x0E => debug!(" PADCTLR"),
                 _ => panic!("xram unimplemented PECI register 0x{:02X}", offset)
             }
