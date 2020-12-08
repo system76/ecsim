@@ -10,18 +10,37 @@ macro_rules! debug {
     ($($arg:tt)*) => (());
 }
 
-pub fn socket_op(ec: &mut Ec, request: &[u8; 3]) -> [u8; 1] {
+pub fn socket_op(ec: &mut Ec, request: &[u8; 4]) -> [u8; 1] {
     debug!("\n[socket");
+
+    let mut mcu = ec.mcu.lock().unwrap();
+
+    let hramwc = mcu.xram[0x105A];
+    let hramw0ba = mcu.xram[0x105B];
+    let hramw1ba = mcu.xram[0x105C];
+    let hramw0aas = mcu.xram[0x105D];
+    let hramw1aas = mcu.xram[0x105E];
+
+    // TODO: protection bits
+    let hramw0_length = 2u16.pow(4 + (hramw0aas as u32 & 0x7));
+    let hramw1_length = 2u16.pow(4 + (hramw1aas as u32 & 0x7));
+
+    let hramw0_start = (hramw0ba as u16) << 4;
+    let hramw1_start = (hramw1ba as u16) << 4;
+    let hramw0_end = hramw0_start + hramw0_length - 1;
+    let hramw1_end = hramw1_start + hramw1_length - 1;
 
     let mut response = [0x00];
     match request[0] {
+        // init
         0x00 => {
             debug!(" init");
         },
+        // inb
         0x01 => {
-            let port = request[1];
+            let port = u16::from_le_bytes([request[1], request[2]]);
             let mut value = 0;
-            debug!(" read 0x{:02X}", port);
+            debug!(" read 0x{:04X}", port);
             match port {
                 0x2e => {
                     debug!(" (super io address)");
@@ -45,26 +64,31 @@ pub fn socket_op(ec: &mut Ec, request: &[u8; 3]) -> [u8; 1] {
                 },
                 0x62 => {
                     debug!(" (pmc data)");
-                    let mut mcu = ec.mcu.lock().unwrap();
                     mcu.xram[0x1500] &= !(1 << 0);
                     value = mcu.xram[0x1501];
                 },
                 0x66 => {
                     debug!(" (pmc status)");
-                    let mcu = ec.mcu.lock().unwrap();
                     value = mcu.xram[0x1500];
                 },
                 _ => {
-                    debug!(" (unimplemented)");
+                    if ((hramw0_start ..= hramw0_end).contains(&port) && (hramwc & 0b01 != 0)) ||
+                       ((hramw1_start ..= hramw1_end).contains(&port) && (hramwc & 0b10 != 0)) {
+                        debug!(" (h2ram)");
+                        value = mcu.xram[port as usize];
+                    } else {
+                        debug!(" (unimplemented)");
+                    }
                 }
             }
             debug!(" = 0x{:02X}", value);
             response[0] = value;
         },
+        // outb
         0x02 => {
-            let port = request[1];
-            let value = request[2];
-            debug!(" write 0x{:02X}, 0x{:02X}", port, value);
+            let port = u16::from_le_bytes([request[1], request[2]]);
+            let value = request[3];
+            debug!(" write 0x{:04X}, 0x{:02X}", port, value);
             match port {
                 0x2e => {
                     debug!(" (super io address)");
@@ -80,19 +104,23 @@ pub fn socket_op(ec: &mut Ec, request: &[u8; 3]) -> [u8; 1] {
                 },
                 0x62 => {
                     debug!(" (pmc data)");
-                    let mut mcu = ec.mcu.lock().unwrap();
                     mcu.xram[0x1500] &= !(1 << 3);
                     mcu.xram[0x1500] |= 1 << 1;
                     mcu.xram[0x1504] = value;
                 },
                 0x66 => {
                     debug!(" (pmc command)");
-                    let mut mcu = ec.mcu.lock().unwrap();
                     mcu.xram[0x1500] |= (1 << 3) | (1 << 1);
                     mcu.xram[0x1504] = value;
                 },
                 _ => {
-                    debug!(" (unimplemented)");
+                    if ((hramw0_start ..= hramw0_end).contains(&port) && (hramwc & 0b01 != 0)) ||
+                       ((hramw1_start ..= hramw1_end).contains(&port) && (hramwc & 0b10 != 0)) {
+                        debug!(" (h2ram)");
+                        mcu.xram[port as usize] = value;
+                    } else {
+                        debug!(" (unimplemented)");
+                    }
                 }
             }
             debug!(" = 0x{:02X}", value);
