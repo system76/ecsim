@@ -191,12 +191,31 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let offset = address - base;
             debug!(" (INTC 0x{:02X}", offset);
             match offset {
+                0x00 => debug!(" ISR0"),
                 0x01 => debug!(" ISR1"),
+                0x02 => debug!(" ISR2"),
+                0x03 => debug!(" ISR3"),
                 0x05 => debug!(" IER1"),
                 0x07 => debug!(" IER3"),
                 0x10 => debug!(" IVECT"),
+                0x50 => debug!(" ISR19"),
                 0x51 => debug!(" IER19"),
                 _ => panic!("xram unimplemented INTC register 0x{:02X}", offset)
+            }
+            debug!(")");
+        },
+        // E2CI
+        0x1200 ..= 0x12FF => {
+            let base = 0x1200;
+            let offset = address - base;
+            debug!(" (E2CI 0x{:02X}", offset);
+            match offset {
+                0x00 => debug!(" IHIOA"),
+                0x01 => debug!(" IHD"),
+                0x02 => debug!(" UNKNOWN"),
+                0x04 => debug!(" IBMAE"),
+                0x05 => debug!(" IBCTL"),
+                _ => panic!("xram unimplemented E2CI register 0x{:02X}", offset)
             }
             debug!(")");
         },
@@ -228,6 +247,18 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                     mcu.xram[0x1304] &= !(1 << 1);
                 }
                 _ => panic!("xram unimplemented KBC register 0x{:02X}", offset)
+            }
+            debug!(")");
+        },
+        // SWUC
+        0x1400 ..= 0x14FF => {
+            let base = 0x1400;
+            let offset = address - base;
+            debug!(" (SWUC 0x{:02X}", offset);
+            match offset {
+                0x08 => debug!(" SWCBALR"),
+                0x0A => debug!(" SWCBAHR"),
+                _ => panic!("xram unimplemented SWUC register 0x{:02X}", offset)
             }
             debug!(")");
         },
@@ -426,15 +457,19 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x29 => debug!(" HOSTAC"),
                 0x2A => debug!(" HOCTLC"),
                 0x32 => debug!(" HOCTL2C"),
+                0x33 => debug!(" 4p7A4P0H"),
                 0x35 => debug!(" HOSTAD"),
                 0x36 => debug!(" HOCTLD"),
                 0x3E => debug!(" HOCTL2D"),
                 0x41 => debug!(" SCLKTSB"),
                 0xA0 if ec.id == 0x5570 => debug!(" HOSTAE"),
                 0xA1 if ec.id == 0x5570 => debug!(" HOCTLE"),
+                0xA2 if ec.id == 0x5570 => debug!(" HOCMDE"),
                 0xA3 if ec.id == 0x5570 => debug!(" TRASLAE"),
                 0xA7 if ec.id == 0x5570 => debug!(" HOBDBE"),
+                0xA9 if ec.id == 0x5570 => debug!(" SMBPCTLE"),
                 0xAA if ec.id == 0x5570 => debug!(" HOCTL2E"),
+                0xAB if ec.id == 0x5570 => debug!(" SCLKTS_E"),
                 0xB0 if ec.id == 0x5570 => debug!(" HOSTAF"),
                 0xB1 if ec.id == 0x5570 => debug!(" HOCTLF"),
                 0xBA if ec.id == 0x5570 => debug!(" HOCTL2F"),
@@ -483,7 +518,9 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(" (ECPM 0x{:02X}", offset);
             match offset {
                 0x02 => debug!(" CGCTRL2"),
+                0x03 => debug!(" PLLCTRL"),
                 0x05 => debug!(" CGCTRL3"),
+                0x06 => debug!(" PLLFREQR"),
                 0x09 => debug!(" CGCTRL4"),
                 _ => panic!("xram unimplemented ECPM register 0x{:02X}", offset)
             }
@@ -545,6 +582,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x05 => debug!(" General Capabilities and Configurations 2"),
                 0x06 => debug!(" General Capabilities and Configurations 1"),
                 0x07 => debug!(" General Capabilities and Configurations 0"),
+                0x14 => debug!(" Channel 3 Capabilities and Configurations 3"),
+                0x15 => debug!(" Channel 3 Capabilities and Configurations 2"),
+                0x16 => debug!(" Channel 3 Capabilities and Configurations 1"),
+                0x17 => debug!(" Channel 3 Capabilities and Configurations 0"),
                 0xA1 => debug!(" ESGCTRL1"),
                 0xA2 => debug!(" ESGCTRL2"),
                 // Virtual wire
