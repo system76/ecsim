@@ -14,12 +14,15 @@ sed 's/)/ =/' | sed 's/]/;/' |
 sed 's/\(GPCR.*\) = 0x00;/\1 = GPIO_ALT;/' |
 sed 's/\(GPCR.*\) = 0x02;/\1 = GPIO_ALT | GPIO_DOWN;/' |
 sed 's/\(GPCR.*\) = 0x04;/\1 = GPIO_ALT | GPIO_UP;/' |
+sed 's/\(GPCR.*\) = 0x06;/\1 = GPIO_ALT | GPIO_UP | GPIO_DOWN;/' |
 sed 's/\(GPCR.*\) = 0x40;/\1 = GPIO_OUT;/' |
 sed 's/\(GPCR.*\) = 0x42;/\1 = GPIO_OUT | GPIO_DOWN;/' |
 sed 's/\(GPCR.*\) = 0x44;/\1 = GPIO_OUT | GPIO_UP;/' |
+sed 's/\(GPCR.*\) = 0x46;/\1 = GPIO_OUT | GPIO_UP | GPIO_DOWN;/' |
 sed 's/\(GPCR.*\) = 0x80;/\1 = GPIO_IN;/' |
 sed 's/\(GPCR.*\) = 0x82;/\1 = GPIO_IN | GPIO_DOWN;/' |
 sed 's/\(GPCR.*\) = 0x84;/\1 = GPIO_IN | GPIO_UP;/' |
+sed 's/\(GPCR.*\) = 0x86;/\1 = GPIO_IN | GPIO_UP | GPIO_DOWN;/' |
 tee gpio/gpio.h
 
 echo "Results saved in gpio/gpio.h"
