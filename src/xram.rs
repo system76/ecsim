@@ -22,7 +22,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
     debug!("\n[xram 0x{:04X}", address);
 
     let mut old = mcu.load(Addr::XRam(address));
+
+    // Bit masks for register access
     let mut write_clear_mask = 0;
+    let mut read_only_mask = 0;
 
     match address {
         // Scratch SRAM
@@ -65,6 +68,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x20 => {
                     debug!(" SMECCS");
                     write_clear_mask = 0b0100_0000;
+                    read_only_mask = 0b0001_1000;
                 }
                 0x32 => debug!(" FLHCTRL2R"),
                 0x33 => debug!(" CACHDISR"),
@@ -72,7 +76,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x3B => debug!(" ECINDAR0"),
                 0x3C => debug!(" ECINDAR1"),
                 0x3D => debug!(" ECINDAR2"),
-                0x3E => debug!(" ECINDAR3"),
+                0x3E => {
+                    debug!(" ECINDAR3");
+                    read_only_mask = 0b0011_0000;
+                }
                 0x3F => {
                     debug!(" ECINDDR");
 
@@ -196,49 +203,117 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let base = 0x1100;
             let offset = address - base;
             debug!(" (INTC 0x{:02X}", offset);
+
+            // XXX: ISRx are R/WC if set to edge-triggered in IELMRx
             match offset {
-                0x00 => debug!(" ISR0"),
-                0x01 => debug!(" ISR1"),
-                0x02 => debug!(" ISR2"),
+                0x00 => {
+                    debug!(" ISR0");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x01 => {
+                    debug!(" ISR1");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x02 => {
+                    debug!(" ISR2");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x03 => debug!(" ISR3"),
                 0x05 => debug!(" IER1"),
                 0x07 => debug!(" IER3"),
-                0x10 => debug!(" IVECT"),
-                0x14 => debug!(" ISR4"),
+                0x10 => {
+                    debug!(" IVECT");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x14 => {
+                    debug!(" ISR4");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x15 => debug!(" IER4"),
-                0x18 => debug!(" ISR5"),
+                0x18 => {
+                    debug!(" ISR5");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x19 => debug!(" IER5"),
-                0x1C => debug!(" ISR6"),
+                0x1C => {
+                    debug!(" ISR6");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x1D => debug!(" IER6"),
-                0x20 => debug!(" ISR7"),
+                0x20 => {
+                    debug!(" ISR7");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x21 => debug!(" IER7"),
-                0x24 => debug!(" ISR8"),
+                0x24 => {
+                    debug!(" ISR8");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x25 => debug!(" IER8"),
-                0x28 => debug!(" ISR9"),
+                0x28 => {
+                    debug!(" ISR9");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x29 => debug!(" IER9"),
-                0x2C => debug!(" ISR10"),
+                0x2C => {
+                    debug!(" ISR10");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x2D => debug!(" IER10"),
-                0x30 => debug!(" ISR11"),
+                0x30 => {
+                    debug!(" ISR11");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x31 => debug!(" IER11"),
-                0x34 => debug!(" ISR12"),
+                0x34 => {
+                    debug!(" ISR12");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x35 => debug!(" IER12"),
-                0x38 => debug!(" ISR13"),
+                0x38 => {
+                    debug!(" ISR13");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x39 => debug!(" IER13"),
-                0x3C => debug!(" ISR14"),
+                0x3C => {
+                    debug!(" ISR14");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x3D => debug!(" IER14"),
-                0x40 => debug!(" ISR15"),
+                0x40 => {
+                    debug!(" ISR15");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x41 => debug!(" IER15"),
-                0x44 => debug!(" ISR16"),
+                0x44 => {
+                    debug!(" ISR16");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x45 => debug!(" IER16"),
-                0x48 => debug!(" ISR17"),
+                0x48 => {
+                    debug!(" ISR17");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x49 => debug!(" IER17"),
-                0x4C => debug!(" ISR18"),
+                0x4C => {
+                    debug!(" ISR18");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x4D => debug!(" IER18"),
-                0x50 => debug!(" ISR19"),
+                0x50 => {
+                    debug!(" ISR19");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x51 => debug!(" IER19"),
-                0x54 => debug!(" ISR20"),
+                0x54 => {
+                    debug!(" ISR20");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x55 => debug!(" IER20"),
-                0x58 => debug!(" ISR21"),
+                0x58 => {
+                    debug!(" ISR21");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x59 => debug!(" IER21"),
                 _ => panic!("xram unimplemented INTC register 0x{:02X}", offset)
             }
@@ -254,7 +329,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x01 => debug!(" IHD"),
                 0x02 => debug!(" UNKNOWN"),
                 0x04 => debug!(" IBMAE"),
-                0x05 => debug!(" IBCTL"),
+                0x05 => {
+                    debug!(" IBCTL");
+                    read_only_mask = 0b0000_0100;
+                }
                 _ => panic!("xram unimplemented E2CI register 0x{:02X}", offset)
             }
             debug!(")");
@@ -266,8 +344,14 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(" (KBC 0x{:02X}", offset);
             match offset {
                 0x00 => debug!(" KBHICR"),
-                0x02 => debug!(" KBIRQR"),
-                0x04 => debug!(" KBHISR"),
+                0x02 => {
+                    debug!(" KBIRQR");
+                    read_only_mask = 0b1000_0000;
+                }
+                0x04 => {
+                    debug!(" KBHISR");
+                    read_only_mask = 0b0000_1011;
+                }
                 0x06 => {
                     debug!(" KBHIKDOR");
                     //TODO: Enforce write-only
@@ -282,9 +366,9 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 },
                 0x0A => {
                     debug!(" KBHIDIR");
-                    //TODO: Enforce read-only
                     // Clear input buffer full flag
                     mcu.xram[0x1304] &= !(1 << 1);
+                    read_only_mask = 0b1111_1111;
                 }
                 _ => panic!("xram unimplemented KBC register 0x{:02X}", offset)
             }
@@ -308,7 +392,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let offset = address - base;
             debug!(" (PMC 0x{:02X}", offset);
             match offset {
-                0x00 => debug!(" PM1STS"),
+                0x00 => {
+                    debug!(" PM1STS");
+                    read_only_mask = 0b0000_1011;
+                }
                 0x01 => {
                     debug!(" PM1DO");
                     //TODO: Enforce write-only
@@ -317,13 +404,16 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 },
                 0x04 => {
                     debug!(" PM1DI");
-                    //TODO: Enforce read-only
                     // Clear input buffer full flag
                     mcu.xram[0x1500] &= !(1 << 1);
+                    read_only_mask = 0b1111_1111;
                 }
                 0x06 => debug!(" PM1CTL"),
                 0x16 => debug!(" PM2CTL"),
-                0x30 => debug!(" PM4STS"),
+                0x30 => {
+                    debug!(" PM4STS");
+                    read_only_mask = 0b0000_1011;
+                }
                 _ => panic!("xram unimplemented PMC register 0x{:02X}", offset)
             }
             debug!(")");
@@ -348,17 +438,50 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x0A => debug!(" GPDRJ"),
                 0x0D => debug!(" GPDRM"),
 
-                0x61 => debug!(" GPDRA"),
-                0x62 => debug!(" GPDRB"),
-                0x63 => debug!(" GPDRC"),
-                0x64 => debug!(" GPDRD"),
-                0x65 => debug!(" GPDRE"),
-                0x66 => debug!(" GPDRF"),
-                0x67 => debug!(" GPDRG"),
-                0x68 => debug!(" GPDRH"),
-                0x69 => debug!(" GPDRI"),
-                0x6A => debug!(" GPDRJ"),
-                0x6D => debug!(" GPDRM"),
+                0x61 => {
+                    debug!(" GPDRA");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x62 => {
+                    debug!(" GPDRB");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x63 => {
+                    debug!(" GPDRC");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x64 => {
+                    debug!(" GPDRD");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x65 => {
+                    debug!(" GPDRE");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x66 => {
+                    debug!(" GPDRF");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x67 => {
+                    debug!(" GPDRG");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x68 => {
+                    debug!(" GPDRH");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x69 => {
+                    debug!(" GPDRI");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x6A => {
+                    debug!(" GPDRJ");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x6D => {
+                    debug!(" GPDRM");
+                    read_only_mask = 0b1111_1111;
+                }
 
                 0x71 => debug!(" GPOTA"),
                 0x72 => debug!(" GPOTB"),
@@ -407,6 +530,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x0A => {
                     debug!(" PSSTS3");
                     write_clear_mask = 0b0100_0000;
+                    read_only_mask = 0b0011_1111;
                 }
                 _ => panic!("xram unimplemented PS/2 register 0x{:02X}", offset)
             }
@@ -431,7 +555,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x2C => debug!(" C6MCPRS"),
                 0x2D => debug!(" C7CPRS"),
                 0x2E => debug!(" C7MCPRS"),
-                0x40 => debug!(" CLK6MSEL"),
+                0x40 => {
+                    debug!(" CLK6MSEL");
+                    read_only_mask = 0b0001_0000;
+                }
                 0x43 => debug!(" CTR3"),
                 0x48 => {
                     debug!(" TSWCTLR");
@@ -469,8 +596,14 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                     debug!(" VCH3CTL");
                     write_clear_mask = 0b1000_0000;
                 }
-                0x18 => debug!(" VCH0DATL"),
-                0x19 => debug!(" VCH0DATM"),
+                0x18 => {
+                    debug!(" VCH0DATL");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x19 => {
+                    debug!(" VCH0DATM");
+                    read_only_mask = 0b0000_0011;
+                }
                 0x38 => {
                     debug!(" VCH4CTL");
                     write_clear_mask = 0b1000_0000;
@@ -509,6 +642,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x00 => {
                     debug!(" HOSTAA");
                     write_clear_mask = 0b1111_1110;
+                    read_only_mask = 0b0000_0001;
                 }
                 0x01 => debug!(" HOCTLA"),
                 0x02 => debug!(" HOCMDA"),
@@ -520,6 +654,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x11 => {
                     debug!(" HOSTAB");
                     write_clear_mask = 0b1111_1110;
+                    read_only_mask = 0b0000_0001;
                 }
                 0x12 => debug!(" HOCTLB"),
                 0x21 => debug!(" HOCTL2B"),
@@ -533,6 +668,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x29 => {
                     debug!(" HOSTAC");
                     write_clear_mask = 0b1111_1110;
+                    read_only_mask = 0b0000_0001;
                 }
                 0x2A => debug!(" HOCTLC"),
                 0x32 => debug!(" HOCTL2C"),
@@ -540,6 +676,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x35 => {
                     debug!(" HOSTAD");
                     write_clear_mask = 0b1111_1110;
+                    read_only_mask = 0b0000_0001;
                 }
                 0x36 => debug!(" HOCTLD"),
                 0x3E => debug!(" HOCTL2D"),
@@ -547,16 +684,22 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0xA0 if ec.id == 0x5570 => {
                     debug!(" HOSTAE");
                     write_clear_mask = 0b1111_1110;
+                    read_only_mask = 0b0000_0001;
                 }
                 0xA1 if ec.id == 0x5570 => debug!(" HOCTLE"),
                 0xA2 if ec.id == 0x5570 => debug!(" HOCMDE"),
                 0xA3 if ec.id == 0x5570 => debug!(" TRASLAE"),
                 0xA7 if ec.id == 0x5570 => debug!(" HOBDBE"),
-                0xA9 if ec.id == 0x5570 => debug!(" SMBPCTLE"),
+                0xA9 if ec.id == 0x5570 => {
+                    debug!(" SMBPCTLE");
+                    read_only_mask = 0b0000_0011;
+                }
                 0xAA if ec.id == 0x5570 => debug!(" HOCTL2E"),
                 0xAB if ec.id == 0x5570 => debug!(" SCLKTS_E"),
                 0xB0 if ec.id == 0x5570 => {
                     debug!(" HOSTAF");
+                    write_clear_mask = 0b1111_1110;
+                    read_only_mask = 0b0000_0001;
                 }
                 0xB1 if ec.id == 0x5570 => debug!(" HOCTLF"),
                 0xBA if ec.id == 0x5570 => debug!(" HOCTL2F"),
@@ -582,15 +725,24 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 },
                 0x02 => debug!(" KSOCTRL"),
                 0x03 => debug!(" KSOH2"),
-                0x04 => debug!(" KSI"),
+                0x04 => {
+                    debug!(" KSI");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x05 => debug!(" KSICTRLR"),
                 0x06 => debug!(" KSIGCTRL"),
                 0x07 => debug!(" KSIGOEN"),
                 0x08 => debug!(" KSIGDAT"),
-                0x09 => debug!(" KSIGDMRR"),
+                0x09 => {
+                    debug!(" KSIGDMRR");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x0A => debug!(" KSOHGCTRL"),
                 0x0B => debug!(" KSOHGOEN"),
-                0x0C => debug!(" KSOHGDMRR"),
+                0x0C => {
+                    debug!(" KSOHGDMRR");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x0D => debug!(" KSOLGCTRL"),
                 0x0E => debug!(" KSOLGOEN"),
                 0x0F => debug!(" KSOLGDMRR"),
@@ -619,12 +771,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let offset = address - base;
             debug!(" (GCTRL 0x{:02X}", offset);
             match offset {
-                0x00 => debug!(" ECHIPID1"),
-                0x01 => debug!(" ECHIPID2"),
-                0x02 => debug!(" ECHIPVER"),
+                0x00 => {
+                    debug!(" ECHIPID1");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x01 => {
+                    debug!(" ECHIPID2");
+                    read_only_mask = 0b1111_1111;
+                }
+                0x02 => {
+                    debug!(" ECHIPVER");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x06 => {
                     debug!(" RSTS");
-                    write_clear_mask = 0b0000_0011;
+                    if ec.id == 0x8587 {
+                        read_only_mask = 0b0000_0011;
+                    }
+                    if ec.id == 0x5570 {
+                        write_clear_mask = 0b0000_0011;
+                    }
                 }
                 0x0A => debug!(" BADRSEL"),
                 0x0B => debug!(" WNCKR"),
@@ -652,6 +818,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x00 => {
                     debug!(" HOSTAR");
                     write_clear_mask = 0b1110_1110;
+                    read_only_mask = 0b0000_0001;
                 }
                 0x01 => debug!(" HOCTLR"),
                 0x02 => debug!(" HOCMDR"),
@@ -661,7 +828,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x06 => debug!(" HOWRDR"),
                 0x07 => debug!(" HORDDR"),
                 0x08 => debug!(" HOCTL2R"),
-                0x09 => debug!(" RWFCSV"),
+                0x09 => {
+                    debug!(" RWFCSV");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x0E => debug!(" PADCTLR"),
                 _ => panic!("xram unimplemented PECI register 0x{:02X}", offset)
             }
@@ -674,14 +844,32 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(" (eSPI 0x{:02X}", offset);
             match offset {
                 // Peripheral
-                0x04 => debug!(" General Capabilities and Configurations 3"),
-                0x05 => debug!(" General Capabilities and Configurations 2"),
-                0x06 => debug!(" General Capabilities and Configurations 1"),
-                0x07 => debug!(" General Capabilities and Configurations 0"),
+                0x04 => {
+                    debug!(" General Capabilities and Configurations 3");
+                    read_only_mask = 0b1101_1111;
+                }
+                0x05 => {
+                    debug!(" General Capabilities and Configurations 2");
+                    read_only_mask = 0b0111_0000;
+                }
+                0x06 => {
+                    debug!(" General Capabilities and Configurations 1");
+                    read_only_mask = 0b1111_0000;
+                }
+                0x07 => {
+                    debug!(" General Capabilities and Configurations 0");
+                    read_only_mask = 0b1111_1111;
+                }
                 0x14 => debug!(" Channel 3 Capabilities and Configurations 3"),
                 0x15 => debug!(" Channel 3 Capabilities and Configurations 2"),
-                0x16 => debug!(" Channel 3 Capabilities and Configurations 1"),
-                0x17 => debug!(" Channel 3 Capabilities and Configurations 0"),
+                0x16 => {
+                    debug!(" Channel 3 Capabilities and Configurations 1");
+                    read_only_mask = 0b0111_1111;
+                }
+                0x17 => {
+                    debug!(" Channel 3 Capabilities and Configurations 0");
+                    read_only_mask = 0b1111_1111;
+                }
                 0xA1 => debug!(" ESGCTRL1"),
                 0xA2 => debug!(" ESGCTRL2"),
                 // Virtual wire
@@ -702,8 +890,9 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
     if let Some(new) = new_opt {
         debug!(" store 0x{:02X}", new);
 
-        let value = ((old & !new) & write_clear_mask)
-            | (new & !write_clear_mask);
+        let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+        let ro = old | (new & !read_only_mask);
+        let value = rwc & ro;
 
         mcu.store(Addr::XRam(address), value);
     }
