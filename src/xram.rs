@@ -22,6 +22,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
     debug!("\n[xram 0x{:04X}", address);
 
     let mut old = mcu.load(Addr::XRam(address));
+    let mut write_clear_mask = 0;
 
     match address {
         // Scratch SRAM
@@ -61,7 +62,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x00 => debug!(" FBCFG"),
                 0x01 => debug!(" FPCFG"),
                 0x07 => debug!(" UNKNOWN"),
-                0x20 => debug!(" SMECCS"),
+                0x20 => {
+                    debug!(" SMECCS");
+                    write_clear_mask = 0b0100_0000;
+                }
                 0x32 => debug!(" FLHCTRL2R"),
                 0x33 => debug!(" CACHDISR"),
                 0x36 => debug!(" HCTRL2R"),
@@ -400,7 +404,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x04 => debug!(" PSINT1"),
                 0x05 => debug!(" PSINT2"),
                 0x06 => debug!(" PSINT3"),
-                0x0A => debug!(" PSSTS3"),
+                0x0A => {
+                    debug!(" PSSTS3");
+                    write_clear_mask = 0b0100_0000;
+                }
                 _ => panic!("xram unimplemented PS/2 register 0x{:02X}", offset)
             }
             debug!(")");
@@ -426,7 +433,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x2E => debug!(" C7MCPRS"),
                 0x40 => debug!(" CLK6MSEL"),
                 0x43 => debug!(" CTR3"),
-                0x48 => debug!(" TSWCTLR"),
+                0x48 => {
+                    debug!(" TSWCTLR");
+                    write_clear_mask = 0b0000_1010;
+                }
                 _ => panic!("xram unimplemented PWM register 0x{:02X}", offset)
             }
             debug!(")");
@@ -437,18 +447,42 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let offset = address - base;
             debug!(" (ADC 0x{:02X}", offset);
             match offset {
-                0x00 => debug!(" ADCSTS"),
+                0x00 => {
+                    debug!(" ADCSTS");
+                    write_clear_mask = 0b0000_0011;
+                }
                 0x01 => debug!(" ADCCFG"),
-                0x04 => debug!(" VCH0CTL"),
+                0x04 => {
+                    debug!(" VCH0CTL");
+                    write_clear_mask = 0b1000_0000;
+                }
                 0x05 => debug!(" KDCTL"),
-                0x06 => debug!(" VCH1CTL"),
-                0x09 => debug!(" VCH2CTL"),
-                0x0C => debug!(" VCH3CTL"),
+                0x06 => {
+                    debug!(" VCH1CTL");
+                    write_clear_mask = 0b1000_0000;
+                }
+                0x09 => {
+                    debug!(" VCH2CTL");
+                    write_clear_mask = 0b1000_0000;
+                }
+                0x0C => {
+                    debug!(" VCH3CTL");
+                    write_clear_mask = 0b1000_0000;
+                }
                 0x18 => debug!(" VCH0DATL"),
                 0x19 => debug!(" VCH0DATM"),
-                0x38 => debug!(" VCH4CTL"),
-                0x3B => debug!(" VCH5CTL"),
-                0x3E => debug!(" VCH6CTL"),
+                0x38 => {
+                    debug!(" VCH4CTL");
+                    write_clear_mask = 0b1000_0000;
+                }
+                0x3B => {
+                    debug!(" VCH5CTL");
+                    write_clear_mask = 0b1000_0000;
+                }
+                0x3E => {
+                    debug!(" VCH6CTL");
+                    write_clear_mask = 0b1000_0000;
+                }
                 _ => panic!("xram unimplemented ADC register 0x{:02X}", offset)
             }
             debug!(")");
@@ -472,7 +506,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let offset = address - base;
             debug!(" (SMBUS 0x{:02X}", offset);
             match offset {
-                0x00 => debug!(" HOSTAA"),
+                0x00 => {
+                    debug!(" HOSTAA");
+                    write_clear_mask = 0b1111_1110;
+                }
                 0x01 => debug!(" HOCTLA"),
                 0x02 => debug!(" HOCMDA"),
                 0x03 => debug!(" TRASLAA"),
@@ -480,7 +517,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x05 => debug!(" D1REGA"),
                 0x06 => debug!(" HOBDBA"),
                 0x10 => debug!(" HOCTL2A"),
-                0x11 => debug!(" HOSTAB"),
+                0x11 => {
+                    debug!(" HOSTAB");
+                    write_clear_mask = 0b1111_1110;
+                }
                 0x12 => debug!(" HOCTLB"),
                 0x21 => debug!(" HOCTL2B"),
                 0x22 => debug!(" 4P7USL"),
@@ -490,15 +530,24 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x26 => debug!(" 25MS"),
                 0x27 => debug!(" 45P3USL"),
                 0x28 => debug!(" 45P3USH"),
-                0x29 => debug!(" HOSTAC"),
+                0x29 => {
+                    debug!(" HOSTAC");
+                    write_clear_mask = 0b1111_1110;
+                }
                 0x2A => debug!(" HOCTLC"),
                 0x32 => debug!(" HOCTL2C"),
                 0x33 => debug!(" 4p7A4P0H"),
-                0x35 => debug!(" HOSTAD"),
+                0x35 => {
+                    debug!(" HOSTAD");
+                    write_clear_mask = 0b1111_1110;
+                }
                 0x36 => debug!(" HOCTLD"),
                 0x3E => debug!(" HOCTL2D"),
                 0x41 => debug!(" SCLKTSB"),
-                0xA0 if ec.id == 0x5570 => debug!(" HOSTAE"),
+                0xA0 if ec.id == 0x5570 => {
+                    debug!(" HOSTAE");
+                    write_clear_mask = 0b1111_1110;
+                }
                 0xA1 if ec.id == 0x5570 => debug!(" HOCTLE"),
                 0xA2 if ec.id == 0x5570 => debug!(" HOCMDE"),
                 0xA3 if ec.id == 0x5570 => debug!(" TRASLAE"),
@@ -506,7 +555,9 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0xA9 if ec.id == 0x5570 => debug!(" SMBPCTLE"),
                 0xAA if ec.id == 0x5570 => debug!(" HOCTL2E"),
                 0xAB if ec.id == 0x5570 => debug!(" SCLKTS_E"),
-                0xB0 if ec.id == 0x5570 => debug!(" HOSTAF"),
+                0xB0 if ec.id == 0x5570 => {
+                    debug!(" HOSTAF");
+                }
                 0xB1 if ec.id == 0x5570 => debug!(" HOCTLF"),
                 0xBA if ec.id == 0x5570 => debug!(" HOCTL2F"),
                 _ => panic!("xram unimplemented SMBUS register 0x{:02X}", offset)
@@ -571,11 +622,17 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x00 => debug!(" ECHIPID1"),
                 0x01 => debug!(" ECHIPID2"),
                 0x02 => debug!(" ECHIPVER"),
-                0x06 => debug!(" RSTS"),
+                0x06 => {
+                    debug!(" RSTS");
+                    write_clear_mask = 0b0000_0011;
+                }
                 0x0A => debug!(" BADRSEL"),
                 0x0B => debug!(" WNCKR"),
                 0x0D => debug!(" SPCTRL1"),
-                0x30 => debug!(" P80H81HS"),
+                0x30 => {
+                    debug!(" P80H81HS");
+                    write_clear_mask = 0b0000_0001;
+                }
                 _ => panic!("xram unimplemented GCTRL register 0x{:02X}", offset)
             }
             debug!(")");
@@ -592,7 +649,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let offset = address - base;
             debug!(" (PECI 0x{:02X}", offset);
             match offset {
-                0x00 => debug!(" HOSTAR"),
+                0x00 => {
+                    debug!(" HOSTAR");
+                    write_clear_mask = 0b1110_1110;
+                }
                 0x01 => debug!(" HOCTLR"),
                 0x02 => debug!(" HOCMDR"),
                 0x03 => debug!(" HOTRADDR"),
@@ -641,7 +701,11 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
     debug!(" load 0x{:02X}", old);
     if let Some(new) = new_opt {
         debug!(" store 0x{:02X}", new);
-        mcu.store(Addr::XRam(address), new);
+
+        let value = ((old & !new) & write_clear_mask)
+            | (new & !write_clear_mask);
+
+        mcu.store(Addr::XRam(address), value);
     }
 
     debug!("]");
