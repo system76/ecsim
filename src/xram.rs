@@ -248,7 +248,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             match offset {
                 0x00 => debug!(" IHIOA"),
                 0x01 => debug!(" IHD"),
-                0x02 => debug!(" UNKNOWN"),
+                0x02 => debug!(" LSIOHA"),
                 0x04 => debug!(" IBMAE"),
                 0x05 => debug!(" IBCTL"),
                 _ => panic!("xram unimplemented E2CI register 0x{:02X}", offset)
@@ -459,7 +459,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let offset = address - base;
             debug!(" (DAC 0x{:02X}", offset);
             match offset {
-                0x00 => debug!(" UNKNOWN"),
+                0x00 => debug!(" DACCTRL"),
                 0x01 => debug!(" DACPDREG"),
                 0x04 => debug!(" DACDAT2"),
                 _ => panic!("xram unimplemented DAC register 0x{:02X}", offset)
