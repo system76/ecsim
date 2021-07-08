@@ -121,17 +121,127 @@ impl Isa for Ec {
 
         mcu.reset();
 
+        // SMFI
+        mcu.xram[0x1001] = if self.id == 0x5570 {
+            0b0011_1111
+        } else {
+            0b1011_1111
+        };
+        mcu.xram[0x1020] = 0b0000_1000;
+        mcu.xram[0x1032] = 0b0000_0011;
+        mcu.xram[0x1036] = 0b1000_0000;
+
         // Disable SCAR
         for (reg, _, _) in self.scar() {
-            mcu.xram[reg + 2] = 0b11;
+            mcu.xram[reg + 2] = if self.id == 0x5570 {
+                0b111
+            } else {
+                0b11
+            };
         }
 
-        // Set default INTC IVECT
+        // INTC
         mcu.xram[0x1110] = 0x10;
 
-        // Set CHIP ID
+        // KBC
+        mcu.xram[0x1202] = 0b0000_0111;
+
+        // PMC
+        mcu.xram[0x1506] = 0b0100_0000;
+        mcu.xram[0x1516] = 0b0100_0000;
+
+        // GPIO
+        mcu.xram[0x1600] = 0b0000_0100;
+        mcu.xram[0x1607] = 0b0000_0001;
+        if self.id == 0x5570 {
+            mcu.xram[0x16E5] = 0b0000_0110;
+        }
+        mcu.xram[0x16F2] = 0b0100_0000;
+        mcu.xram[0x16F5] = 0b0000_1111;
+
+        // PS/2
+        mcu.xram[0x1700] = 0b0000_0001;
+        mcu.xram[0x1701] = 0b0000_0001;
+        mcu.xram[0x1702] = 0b0000_0001;
+
+        // PWM
+        mcu.xram[0x1801] = 0xFF;
+        mcu.xram[0x180D] = 0b0101_0101;
+        mcu.xram[0x1843] = 0xFF;
+
+        // ADC
+        mcu.xram[0x1900] = 0b1000_0000;
+        mcu.xram[0x1901] = 0b1000_0000;
+        mcu.xram[0x1904] = 0b0001_1111;
+        mcu.xram[0x1906] = 0b0001_1111;
+        mcu.xram[0x1909] = 0b0001_1111;
+        mcu.xram[0x190C] = 0b0001_1111;
+
+        // DAC
+        mcu.xram[0x1A00] = 0b0001_0000;
+        mcu.xram[0x1A01] = 0b0011_1100;
+
+        // SMBus
+        if self.id == 0x5570 {
+            mcu.xram[0x1C26] = 0x19;
+        }
+        mcu.xram[0x1C34] = 0b0000_0100;
+        if self.id == 0x5570 {
+            mcu.xram[0x1C40] = 0b0000_0100;
+            mcu.xram[0x1C41] = 0b0000_0100;
+            mcu.xram[0x1CA9] = 0b0000_1100;
+        }
+
+        // KBC
+        mcu.xram[0x1D22] = 0b0000_0001;
+
+        // ECPM
+        mcu.xram[0x1E03] = 0b0000_0001;
+        mcu.xram[0x1E04] = 0b0111_0000;
+        mcu.xram[0x1E05] = 0b0100_0001;
+        mcu.xram[0x1E06] = 0b0000_0001;
+        mcu.xram[0x1E09] = 0b0000_0001;
+
+        // GCTRL
         mcu.xram[0x2000] = (self.id >> 8) as u8;
         mcu.xram[0x2001] = self.id as u8;
         mcu.xram[0x2002] = self.version;
+        mcu.xram[0x2006] = if self.id == 0x5570 {
+            0b01001100
+        } else {
+            0b10001100
+        };
+
+        if self.id == 0x5570 {
+            // eSPI slave
+            mcu.xram[0x3104] = 0b0000_0011;
+            mcu.xram[0x3105] = 0b0000_0010;
+            mcu.xram[0x3107] = 0b0000_1111;
+            mcu.xram[0x310A] = 0b0001_0001;
+            mcu.xram[0x310E] = 0b0000_0111;
+            mcu.xram[0x3112] = 0b0000_0001;
+            mcu.xram[0x3113] = 0b0001_0000;
+            mcu.xram[0x3116] = 0b0001_0001;
+            mcu.xram[0x3117] = 0b0010_0100;
+            mcu.xram[0x311A] = 0b0000_0100;
+            mcu.xram[0x311B] = 0b0000_0001;
+
+            // eSPI VW
+            mcu.xram[0x3200] = 0b0000_0011;
+            mcu.xram[0x3202] = 0b0000_0011;
+            mcu.xram[0x3203] = 0b0000_0011;
+            mcu.xram[0x3204] = 0b0000_0011;
+            mcu.xram[0x3205] = 0b0000_0011;
+            mcu.xram[0x3206] = 0b0000_0011;
+            mcu.xram[0x3207] = 0b0000_0011;
+            mcu.xram[0x3240] = 0b0000_0011;
+            mcu.xram[0x3241] = 0b0000_0011;
+            mcu.xram[0x3242] = 0b0000_0011;
+            mcu.xram[0x3243] = 0b0000_0011;
+            mcu.xram[0x3244] = 0b0000_0011;
+            mcu.xram[0x3245] = 0b0000_0011;
+            mcu.xram[0x3246] = 0b0000_0011;
+            mcu.xram[0x3247] = 0b0000_0011;
+        }
     }
 }
