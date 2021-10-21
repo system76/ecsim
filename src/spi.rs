@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+#![allow(clippy::needless_range_loop)]
+
 use std::collections::VecDeque;
 
 #[cfg(feature = "debug_spi")]
@@ -20,6 +22,7 @@ pub struct Spi {
     pub output: VecDeque<u8>,
 }
 
+#[allow(clippy::new_without_default)]
 impl Spi {
     pub fn new() -> Self {
         Self {
@@ -31,9 +34,9 @@ impl Spi {
         }
     }
 
-    pub fn step(&mut self, flash: &mut [u8], flash_name: &str) {
+    pub fn step(&mut self, flash: &mut [u8], _flash_name: &str) {
         if let Some(command) = self.input.pop_front() {
-            debug!("\n[spi {}", flash_name);
+            debug!("\n[spi {}", _flash_name);
 
             self.fast_read_addr = None;
 
@@ -41,9 +44,9 @@ impl Spi {
                 0x01 => {
                     debug!(" write status");
 
-                    let value = self.input.pop_front().expect("spi wrate status value missing");
+                    let _value = self.input.pop_front().expect("spi wrate status value missing");
 
-                    debug!(" 0x{:02X}", value);
+                    debug!(" 0x{:02X}", _value);
                 },
                 0x02 => {
                     debug!(" page program");

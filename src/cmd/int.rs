@@ -10,7 +10,7 @@ pub fn int(ec: &mut Ec, args: &[&str]) {
         return;
     }
 
-    let int = match u8::from_str_radix(&args[0], 10) {
+    let int = match u8::from_str_radix(args[0], 10) {
         Ok(ok) => if ok <= 5 {
             ok
         } else {

@@ -98,6 +98,7 @@ pub fn socket_op(ec: &mut Ec, request: &[u8; 4]) -> [u8; 1] {
                 },
                 0x2f => {
                     debug!(" (super io data 0x{:02X})", ec.superio_addr);
+                    #[allow(clippy::match_single_binding)]
                     match ec.superio_addr {
                         _ => {
                             debug!(" (unimplemented)");
