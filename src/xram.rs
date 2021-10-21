@@ -583,8 +583,8 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
         // BRAM
         0x2200 ..= 0x22FF => {
             let base = 0x2200;
-            let offset = address - base;
-            debug!(" (BRAM 0x{:02X})", offset);
+            let _offset = address - base;
+            debug!(" (BRAM 0x{:02X})", _offset);
         },
         // PECI
         0x3000 ..= 0x30FF => {
@@ -632,8 +632,8 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
         },
         0x8000 ..= 0x97FF if ec.id == 0x5570 => {
             let base = 0x8000;
-            let offset = address - base;
-            debug!(" (SRAM 0x{:02X})", offset);
+            let _offset = address - base;
+            debug!(" (SRAM 0x{:02X})", _offset);
         }
         _ => panic!("xram unimplemented register 0x{:04X}", address),
     }

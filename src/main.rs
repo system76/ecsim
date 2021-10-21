@@ -29,7 +29,7 @@ struct Completer<'a> {
 impl<'a> liner::Completer for Completer<'a> {
     fn completions(&mut self, start: &str) -> Vec<String> {
         let mut completions = Vec::new();
-        for (name, _func) in self.commands {
+        for name in self.commands.keys() {
             if name.starts_with(start) {
                 completions.push(name.to_string());
             }
@@ -118,7 +118,7 @@ fn commands() -> CommandMap {
                 };
 
                 mcu.xram[addr] = value;
-                
+
                 eprintln!("xram {:04X}: {:02X}", addr, mcu.xram[addr]);
             }
         } else {
@@ -164,9 +164,7 @@ fn timers(ec: &mut Ec) {
 
     // Timer 0 running
     if tcon & 1 << 4 != 0 {
-        if tmod & 0x0F != 0x01 {
-            panic!("unimplemented TMOD 0x{:02X}", tmod);
-        }
+        assert!(tmod & 0x0F == 0x01, "unimplemented TMOD 0x{:02X}", tmod);
 
         if ec.steps % 12 == 0 {
             let tl = 0x8A;
@@ -190,9 +188,7 @@ fn timers(ec: &mut Ec) {
 
     // Timer 1 running
     if tcon & 1 << 6 != 0 {
-        if tmod & 0xF0 != 0x10 {
-            panic!("unimplemented TMOD 0x{:02X}", tmod);
-        }
+        assert!(tmod & 0xF0 == 0x10, "unimplemented TMOD 0x{:02X}", tmod);
 
         if ec.steps % 12 == 0 {
             let tl = 0x8B;
@@ -222,7 +218,7 @@ fn main() {
         RUNNING.store(false, Ordering::SeqCst);
     }).expect("failed to set ctrl-c handler");
 
-    let pmem_path = env::args().nth(1).unwrap_or("ec.rom".to_string());
+    let pmem_path = env::args().nth(1).unwrap_or_else(|| "ec.rom".to_string());
 
     let mut pmem = fs::read(&pmem_path).expect("failed to read ec.rom");
 

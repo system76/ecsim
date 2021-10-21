@@ -16,7 +16,7 @@ pub fn cmd(ec: &mut Ec, args: &[&str]) {
         return;
     }
 
-    let data = match u8::from_str_radix(&args[0], 16) {
+    let data = match u8::from_str_radix(args[0], 16) {
         Ok(ok) => ok,
         Err(err) => {
             eprintln!("argument '{}' failed to parse as hex: {}", args[0], err);
@@ -44,7 +44,7 @@ pub fn write(ec: &mut Ec, args: &[&str]) {
         return;
     }
 
-    let data = match u8::from_str_radix(&args[0], 16) {
+    let data = match u8::from_str_radix(args[0], 16) {
         Ok(ok) => ok,
         Err(err) => {
             eprintln!("argument '{}' failed to parse as hex: {}", args[0], err);
