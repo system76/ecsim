@@ -308,7 +308,7 @@ fn main() {
         }
 
         match con.read_line(
-            "[ecsim]$ ",
+            liner::Prompt::from("[ecsim]$ "),
             None,
             &mut Completer {
                 commands: &commands,
