@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 use area8051::{Addr, Isa, Mem};
 use std::{env, fs, io};
 use std::collections::{BTreeMap, HashMap};

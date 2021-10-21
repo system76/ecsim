@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 use crate::ec::Ec;
 
 #[cfg(feature = "debug_socket")]

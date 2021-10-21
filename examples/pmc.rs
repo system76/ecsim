@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 /// Example of resetting KBC - communicates with running ecsim over socket
 
 use std::io;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 use crate::Ec;
 
 const STATUS_CMD: u8 = 1 << 3;

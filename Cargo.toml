@@ -3,6 +3,7 @@ name = "ecsim"
 version = "0.1.0"
 authors = ["Jeremy Soller <jeremy@system76.com>"]
 edition = "2018"
+license = "MIT"
 
 [dependencies]
 area8051 = { path = "area8051" }
