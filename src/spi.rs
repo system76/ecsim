@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 use std::collections::VecDeque;
 
 #[cfg(feature = "debug_spi")]
