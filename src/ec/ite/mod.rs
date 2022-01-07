@@ -3,7 +3,10 @@
 use area8051::{Addr, Isa, Mcu, Mem, Reg};
 use std::sync::Mutex;
 
-use crate::{Spi, xram};
+use crate::Spi;
+use self::xram::xram;
+
+mod xram;
 
 pub struct Ec {
     pub id: u16,

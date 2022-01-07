@@ -2,7 +2,7 @@
 
 use area8051::{Addr, Mem};
 
-use crate::Ec;
+use super::Ec;
 
 #[cfg(feature = "debug_xram")]
 macro_rules! debug {

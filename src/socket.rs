@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use crate::ec::Ec;
+use crate::Ec;
 
 #[cfg(feature = "debug_socket")]
 macro_rules! debug {

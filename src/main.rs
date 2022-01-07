@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 pub (crate) mod cmd;
 
-pub use self::ec::Ec;
+pub use self::ec::EneEc as Ec;
 mod ec;
 
 use self::socket::socket_op;
@@ -16,9 +16,6 @@ mod socket;
 
 pub use self::spi::Spi;
 mod spi;
-
-pub use self::xram::xram;
-mod xram;
 
 type CommandMap = HashMap<&'static str, Box<dyn Fn(&mut Ec, &[&str])>>;
 
@@ -230,8 +227,9 @@ fn main() {
     let xmem = pmem.clone();
 
     let mut ec = Ec::new(
-        0x5570, 0x01, // IT5570 (B Version)
-        //0x8587, 0x06, // IT8587E/VG (F Version)
+        0x9548, 0x07, // ENE KB9548 (G Version)
+        //0x5570, 0x01, // ITE IT5570 (B Version)
+        //0x8587, 0x06, // ITE IT8587E/VG (F Version)
         pmem.into_boxed_slice(),
         xmem.into_boxed_slice()
     );
