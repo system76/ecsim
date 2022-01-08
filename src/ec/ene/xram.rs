@@ -33,9 +33,19 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             };
             debug!(" (GPIO 0x{:02X}", offset);
             match offset {
-                0x02 => debug!(" GPIOFS10"),
-                0x12 => debug!(" GPIOOE10"),
-                0x22 => debug!(" GPIOD10"),
+                0x00 ..= 0x0F => debug!(" GPIOFS{:02X}", offset * 8),
+                0x10 ..= 0x1F => debug!(" GPIOOE{:02X}", (offset - 0x10) * 8),
+                0x20 ..= 0x2F => debug!(" GPIOD{:02X}", (offset - 0x20) * 8),
+                0x30 ..= 0x3F => debug!(" GPIOIN{:02X}", (offset - 0x30) * 8),
+                0x40 ..= 0x4F => debug!(" GPIOPU{:02X}", (offset - 0x40) * 8),
+                0x50 ..= 0x5F => debug!(" GPIOOD{:02X}", (offset - 0x50) * 8),
+                0x60 ..= 0x6F => debug!(" GPIOIE{:02X}", (offset - 0x60) * 8),
+                0x70 => debug!(" GPIOMISC"),
+                0x71 => debug!(" GPIOMISC2"),
+                0x76 => debug!(" AOODC"),
+                0x7B => debug!(" GPIOMISC3"),
+                0x80 ..= 0x8F => debug!(" GPIOLV{:02X}", (offset - 0x80) * 8),
+                0x90 ..= 0x9F => debug!(" GPIODC{:02X}", (offset - 0x90) * 8),
                 _ => panic!("xram unimplemented GPIO register 0x{:02X} (0x{:04X})", offset, address)
             }
             debug!(")");
@@ -45,8 +55,55 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             let offset = address - 0x0100;
             debug!(" (KBC 0x{:02X}", offset);
             match offset {
+                0x00 => debug!(" KBCCB"),
+                0x01 => debug!(" KBCCFG"),
+                0x02 => debug!(" KBCPF"),
+                0x03 => debug!(" KBCHWEN"),
                 0x06 => debug!(" KBCSTS"),
                 _ => panic!("xram unimplemented KBC register 0x{:02X} (0x{:04X})", offset, address)
+            }
+            debug!(")");
+        },
+        // Internal keyboard matrix
+        0x0300 ..= 0x030F => {
+            let offset = address - 0x0300;
+            debug!(" (IKB 0x{:02X}", offset);
+            match offset {
+                0x00 => debug!(" IKBCFG"),
+                0x01 => debug!(" IKBLED"),
+                0x03 => debug!(" IKBIE"),
+                0x04 => debug!(" IKBPF"),
+                0x0A => debug!(" IKBSDB"),
+                0x0D => debug!(" IKBSADB"),
+                _ => panic!("xram unimplemented IKB register 0x{:02X} (0x{:04X})", offset, address)
+            }
+            debug!(")");
+        },
+        // Fan controller 0
+        0x0A00 ..= 0x0A1F => {
+            let offset = address - 0x0A00;
+            debug!(" (FAN0 0x{:02X}", offset);
+            match offset {
+                0x00 => debug!(" FANCFG0"),
+                0x01 => debug!(" FANSTS0"),
+                0x10 => debug!(" FANDFT0"),
+                _ => panic!("xram unimplemented FAN0 register 0x{:02X} (0x{:04X})", offset, address)
+            }
+            debug!(")");
+        },
+        // General purpose timer
+        0x0C00 ..= 0x0C0F => {
+            let offset = address - 0x0C00;
+            debug!(" (GPT 0x{:02X}", offset);
+            match offset {
+                0x00 => debug!(" GPTCFG"),
+                0x03 => debug!(" GPT0"),
+                0x05 => debug!(" GPT1"),
+                0x06 => debug!(" GPT2H"),
+                0x07 => debug!(" GPT2L"),
+                0x08 => debug!(" GPT3H"),
+                0x09 => debug!(" GPT3L"),
+                _ => panic!("xram unimplemented GPT register 0x{:02X} (0x{:04X})", offset, address)
             }
             debug!(")");
         },
@@ -57,7 +114,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             match offset {
                 0x00 => debug!(" WDTCFG"),
                 0x01 => debug!(" WDTPF"),
+                0x0A => debug!(" CLK32CR"),
+                0x0E => debug!(" WDTFCR0"),
                 0x0F => debug!(" WDTFCR1"),
+                0x11 => debug!(" WDTCMR"),
                 _ => panic!("xram unimplemented WDT register 0x{:02X} (0x{:04X})", offset, address)
             }
             debug!(")");
@@ -133,8 +193,22 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             }
             debug!(")");
         },
+        // PS/2 interface
+        0x1300 ..= 0x131F => {
+            let offset = address - 0x1300;
+            debug!(" (PS2 0x{:02X}", offset);
+            match offset {
+                0x00 => debug!(" PS2CCTL"),
+                0x03 => debug!(" PS2INTEN"),
+                0x04 => debug!(" PS2INTPF"),
+                0x0A => debug!(" PS2SWRST"),
+                0x0C => debug!(" PS2CGC"),
+                _ => panic!("xram unimplemented PS2 register 0x{:02X} (0x{:04X})", offset, address)
+            }
+            debug!(")");
+        },
         // Embedded controller
-        0x1400 ..= 0x143F | 0xFF00 ..= 0xFF2F => {
+        0x1400 ..= 0x14FF | 0xFF00 ..= 0xFF2F => {
             let offset = if address >= 0xFF00 {
                 address - 0xFF00
             } else {
@@ -143,13 +217,101 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             debug!(" (EC 0x{:02X}", offset);
             match offset {
                 0x01 => debug!(" ECFV"),
+                0x02 => debug!(" ECHA"),
+                0x03 => debug!(" SCICFG"),
+                0x04 => debug!(" ECCFG"),
+                0x05 => debug!(" SCIE0"),
+                0x0C => debug!(" PMUCFG"),
                 0x0D => debug!(" CLKCFG"),
+                0x14 => debug!(" PXCFG"),
+                0x15 => debug!(" ADDAEN"),
+                0x18 => debug!(" ADCTRL"),
                 0x1D => debug!(" ECSTS"),
                 0x20 => debug!(" ECMISC"),
+                0x22 => debug!(" EDIF"),
+                0x26 => debug!(" ADCIE"),
+                0x43 => debug!(" ADEN2"),
                 _ => panic!("xram unimplemented EC register 0x{:02X} (0x{:04X})", offset, address)
             }
             debug!(")");
         }
+        // General purpose wakeup
+        0x1500 ..= 0x157F => {
+            let offset = address - 0x1500;
+            debug!(" (GPWU 0x{:02X}", offset);
+            match offset {
+                0x30 ..= 0x3F => debug!(" GPWUEN{:02X}", (offset - 0x30) * 8),
+                0x40 ..= 0x4F => debug!(" GPWUPF{:02X}", (offset - 0x40) * 8),
+                0x50 ..= 0x5F => debug!(" GPWUPS{:02X}", (offset - 0x50) * 8),
+                0x60 ..= 0x6F => debug!(" GPWUEL{:02X}", (offset - 0x60) * 8),
+                0x70 ..= 0x7F => debug!(" GPWUCHG{:02X}", (offset - 0x70) * 8),
+                _ => panic!("xram unimplemented GPWU register 0x{:02X} (0x{:04X})", offset, address)
+            }
+            debug!(")");
+        },
+        // FSM master 1
+        0x1700 ..= 0x173F => {
+            let offset = address - 0x1700;
+            debug!(" (FSM1 0x{:02X}", offset);
+            match offset {
+                0x10 => debug!(" FSMB1CFG"),
+                0x13 => debug!(" FSMB1OFH"),
+                0x14 => debug!(" FSMB1OFL"),
+                0x15 => debug!(" FSMB1IE"),
+                _ => panic!("xram unimplemented FSM1 register 0x{:02X} (0x{:04X})", offset, address)
+            }
+            debug!(")");
+        },
+        // I2C Device Interface
+        0x1B00 ..= 0x1B2F => {
+            let offset = address - 0x1B00;
+            debug!(" (I2CD 0x{:02X}", offset);
+            match offset {
+                0x10 => debug!(" I2CDCFG"),
+                0x14 => debug!(" I2CDADR"),
+                _ => panic!("xram unimplemented I2CD register 0x{:02X} (0x{:04X})", offset, address)
+            }
+            debug!(")");
+        },
+        // FSM master 2
+        0x2100 ..= 0x213F => {
+            let offset = address - 0x2100;
+            debug!(" (FSM2 0x{:02X}", offset);
+            match offset {
+                0x10 => debug!(" FSMB2CFG"),
+                0x13 => debug!(" FSMB2OFH"),
+                0x14 => debug!(" FSMB2OFL"),
+                0x15 => debug!(" FSMB2IE"),
+                _ => panic!("xram unimplemented FSM2 register 0x{:02X} (0x{:04X})", offset, address)
+            }
+            debug!(")");
+        },
+        // FSM master 3
+        0x2200 ..= 0x223F => {
+            let offset = address - 0x2200;
+            debug!(" (FSM3 0x{:02X}", offset);
+            match offset {
+                0x10 => debug!(" FSMB3CFG"),
+                0x13 => debug!(" FSMB3OFH"),
+                0x14 => debug!(" FSMB3OFL"),
+                0x15 => debug!(" FSMB3IE"),
+                _ => panic!("xram unimplemented FSM3 register 0x{:02X} (0x{:04X})", offset, address)
+            }
+            debug!(")");
+        },
+        // Direct Memory Access
+        0x2500 ..= 0x252F => {
+            let offset = address - 0x2500;
+            debug!(" (DMA 0x{:02X}", offset);
+            match offset {
+                //TODO: DMA can access all kinds of other xram
+                0x00 => debug!(" DMACFG"),
+                0x10 => debug!(" DMAC0CFG"),
+                0x20 => debug!(" DMAC1CFG"),
+                _ => panic!("xram unimplemented DMA register 0x{:02X} (0x{:04X})", offset, address)
+            }
+            debug!(")");
+        },
         // Embedded Flash Protect
         0x2700 ..= 0x278F => {
             let offset = address - 0x2700;
