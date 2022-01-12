@@ -114,6 +114,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             match offset {
                 0x00 => debug!(" WDTCFG"),
                 0x01 => debug!(" WDTPF"),
+                0x02 => debug!(" WDTM0902"),
                 0x0A => debug!(" CLK32CR"),
                 0x0E => debug!(" WDTFCR0"),
                 0x0F => debug!(" WDTFCR1"),
@@ -258,6 +259,8 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x13 => debug!(" FSMB1OFH"),
                 0x14 => debug!(" FSMB1OFL"),
                 0x15 => debug!(" FSMB1IE"),
+                0x1A => debug!(" FSMB1ADR"),
+                0x1C ..= 0x3B => debug!(" FSMB1DAT[{}]", offset - 0x1C),
                 _ => panic!("xram unimplemented FSM1 register 0x{:02X} (0x{:04X})", offset, address)
             }
             debug!(")");
