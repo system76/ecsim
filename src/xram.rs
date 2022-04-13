@@ -21,7 +21,7 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
 
     debug!("\n[xram 0x{:04X}", address);
 
-    let mut old = mcu.load(Addr::XRam(address));
+    let mut old = 0;
 
     // Bit masks for register access: Default is R/W
     let mut write_clear_mask = 0;
@@ -31,14 +31,50 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
     match address {
         // Scratch SRAM
         0x0000 ..= 0x0FFF => {
+            old = mcu.load(Addr::XRam(address));
+
             debug!(" (SRAM)");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         0x8000 ..= 0x97FF if ec.id == 0x5570 => {
+            old = mcu.load(Addr::XRam(address));
+
             debug!(" (SRAM)");
             //TODO: SRAM is double mapped from 0x8000 - 0x8FFF
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // SMFI
         0x1000 ..= 0x10FF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1000;
             let offset = address - base;
             debug!(" (SMFI 0x{:02X}", offset);
@@ -206,9 +242,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented SMFI register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // INTC
         0x1100 ..= 0x11FF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1100;
             let offset = address - base;
             debug!(" (INTC 0x{:02X}", offset);
@@ -327,9 +380,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented INTC register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // E2CI
         0x1200 ..= 0x12FF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1200;
             let offset = address - base;
             debug!(" (E2CI 0x{:02X}", offset);
@@ -345,9 +415,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented E2CI register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // KBC
         0x1300 ..= 0x13FF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1300;
             let offset = address - base;
             debug!(" (KBC 0x{:02X}", offset);
@@ -382,9 +469,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented KBC register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // SWUC
         0x1400 ..= 0x14FF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1400;
             let offset = address - base;
             debug!(" (SWUC 0x{:02X}", offset);
@@ -394,9 +498,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented SWUC register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // PMC
         0x1500 ..= 0x15FF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1500;
             let offset = address - base;
             debug!(" (PMC 0x{:02X}", offset);
@@ -426,9 +547,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented PMC register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // GPIO
         0x1600 ..= 0x16FF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1600;
             let offset = address - base;
             debug!(" (GPIO 0x{:02X}", offset);
@@ -528,9 +666,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented GPIO register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // PS/2
         0x1700 ..= 0x17FF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1700;
             let offset = address - base;
             debug!(" (PS/2 0x{:02X}", offset);
@@ -549,9 +704,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented PS/2 register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // PWM
         0x1800 ..= 0x18FF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1800;
             let offset = address - base;
             debug!(" (PWM 0x{:02X}", offset);
@@ -581,9 +753,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented PWM register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // ADC
         0x1900 ..= 0x19FF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1900;
             let offset = address - base;
             debug!(" (ADC 0x{:02X}", offset);
@@ -633,9 +822,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented ADC register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // DAC
         0x1A00 ..= 0x1AFF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1A00;
             let offset = address - base;
             debug!(" (DAC 0x{:02X}", offset);
@@ -646,9 +852,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented DAC register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // SMBus
         0x1C00 ..= 0x1CFF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1C00;
             let offset = address - base;
             debug!(" (SMBUS 0x{:02X}", offset);
@@ -759,9 +982,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented SMBUS register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // KB Scan
         0x1D00 ..= 0x1DFF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1D00;
             let offset = address - base;
             debug!(" (KBSCAN 0x{:02X}", offset);
@@ -802,9 +1042,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented KBSCAN register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // EC power management
         0x1E00 ..= 0x1EFF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x1E00;
             let offset = address - base;
             debug!(" (ECPM 0x{:02X}", offset);
@@ -820,9 +1077,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented ECPM register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // General Control
         0x2000 ..= 0x20FF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x2000;
             let offset = address - base;
             debug!(" (GCTRL 0x{:02X}", offset);
@@ -861,15 +1135,49 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented GCTRL register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // BRAM
         0x2200 ..= 0x22FF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x2200;
             let _offset = address - base;
             debug!(" (BRAM 0x{:02X})", _offset);
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // PECI
         0x3000 ..= 0x30FF => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x3000;
             let offset = address - base;
             debug!(" (PECI 0x{:02X}", offset);
@@ -898,9 +1206,26 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented PECI register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         // eSPI
         0x3100 ..= 0x32FF if ec.id == 0x5570 => {
+            old = mcu.load(Addr::XRam(address));
+
             let base = 0x3100;
             let offset = address - base;
             debug!(" (eSPI 0x{:02X}", offset);
@@ -939,28 +1264,44 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 _ => panic!("xram unimplemented eSPI register 0x{:02X}", offset)
             }
             debug!(")");
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         },
         0x8000 ..= 0x97FF if ec.id == 0x5570 => {
             let base = 0x8000;
             let _offset = address - base;
             debug!(" (SRAM 0x{:02X})", _offset);
+
+            old &= !write_only_mask;
+            debug!(" load 0x{:02X}", old);
+
+            if let Some(new) = new_opt {
+                debug!(" store 0x{:02X}", new);
+
+                let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
+                let ro = old | (new & !read_only_mask);
+                let value = rwc & ro;
+
+                mcu.store(Addr::XRam(address), value);
+            }
+
+            debug!("]");
         }
         _ => panic!("xram unimplemented register 0x{:04X}", address),
     }
-
-    old &= !write_only_mask;
-    debug!(" load 0x{:02X}", old);
-    if let Some(new) = new_opt {
-        debug!(" store 0x{:02X}", new);
-
-        let rwc = ((old & !new) & write_clear_mask) | (new & !write_clear_mask);
-        let ro = old | (new & !read_only_mask);
-        let value = rwc & ro;
-
-        mcu.store(Addr::XRam(address), value);
-    }
-
-    debug!("]");
 
     old
 }
