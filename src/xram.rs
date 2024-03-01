@@ -65,7 +65,8 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
             match offset {
                 0x00 => debug!(" FBCFG"),
                 0x01 => debug!(" FPCFG"),
-                0x07 => debug!(" UNKNOWN"),
+                0x05 => debug!(" FECBSR"),
+                0x07 => debug!(" FMSSR"),
                 0x20 => {
                     debug!(" SMECCS");
                     write_clear_mask = 0b0100_0000;
@@ -667,6 +668,12 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x04 => debug!(" D0REGA"),
                 0x05 => debug!(" D1REGA"),
                 0x06 => debug!(" HOBDBA"),
+                0x07 => debug!(" PECERCA"),
+                0x0A => {
+                    debug!(" SMBPCTLA");
+                    read_only_mask = 0b0000_0011;
+                    write_only_mask = 0b0001_0000;
+                }
                 0x10 => {
                     debug!(" HOCTL2A");
                     if ec.id == 0x8587 {
@@ -681,6 +688,17 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x12 => {
                     debug!(" HOCTLB");
                     write_only_mask = 0b0110_0000;
+                }
+                0x13 => debug!(" HOCMDB"),
+                0x14 => debug!(" TRASLAB"),
+                0x15 => debug!(" D0REGB"),
+                0x16 => debug!(" D1REGB"),
+                0x17 => debug!(" HOBDBB"),
+                0x18 => debug!(" PECERCB"),
+                0x1B => {
+                    debug!(" SMBPCTLB");
+                    read_only_mask = 0b0000_0011;
+                    write_only_mask = 0b0001_0000;
                 }
                 0x21 => {
                     debug!(" HOCTL2B");
@@ -704,6 +722,17 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                     debug!(" HOCTLC");
                     write_only_mask = 0b0110_0000;
                 }
+                0x2B => debug!(" HOCMDC"),
+                0x2C => debug!(" TRASLAC"),
+                0x2D => debug!(" D0REGC"),
+                0x2E => debug!(" D1REGC"),
+                0x2F => debug!(" HOBDBC"),
+                0x30 => debug!(" PECERCC"),
+                0x31 => {
+                    debug!(" SMBPCTLC");
+                    read_only_mask = 0b0000_0011;
+                    write_only_mask = 0b0001_0000;
+                }
                 0x32 => {
                     debug!(" HOCTL2C");
                     if ec.id == 0x8587 {
@@ -719,6 +748,17 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0x36 => {
                     debug!(" HOCTLD");
                     write_only_mask = 0b0110_0000;
+                }
+                0x37 => debug!(" HOCMDD"),
+                0x38 => debug!(" TRASLAD"),
+                0x39 => debug!(" D0REGD"),
+                0x3A => debug!(" D1REGD"),
+                0x3B => debug!(" HOBDBD"),
+                0x3C => debug!(" PECERCD"),
+                0x3D => {
+                    debug!(" SMBPCTLD");
+                    read_only_mask = 0b0000_0011;
+                    write_only_mask = 0b0001_0000;
                 }
                 0x3E => {
                     debug!(" HOCTL2D");
@@ -738,7 +778,10 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 }
                 0xA2 if ec.id == 0x5570 => debug!(" HOCMDE"),
                 0xA3 if ec.id == 0x5570 => debug!(" TRASLAE"),
+                0xA4 if ec.id == 0x5570 => debug!(" D0REGE"),
+                0xA6 if ec.id == 0x5570 => debug!(" D1REGE"),
                 0xA7 if ec.id == 0x5570 => debug!(" HOBDBE"),
+                0xA8 if ec.id == 0x5570 => debug!(" PECERCE"),
                 0xA9 if ec.id == 0x5570 => {
                     debug!(" SMBPCTLE");
                     read_only_mask = 0b0000_0011;
@@ -754,6 +797,17 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 0xB1 if ec.id == 0x5570 => {
                     debug!(" HOCTLF");
                     write_only_mask = 0b0110_0000;
+                }
+                0xB2 if ec.id == 0x5570 => debug!(" HOCMDF"),
+                0xB3 if ec.id == 0x5570 => debug!(" TRASLAF"),
+                0xB4 if ec.id == 0x5570 => debug!(" D0REGF"),
+                0xB6 if ec.id == 0x5570 => debug!(" D1REGF"),
+                0xB7 if ec.id == 0x5570 => debug!(" HOBDBF"),
+                0xB8 if ec.id == 0x5570 => debug!(" PECERCF"),
+                0xB9 if ec.id == 0x5570 => {
+                    debug!(" SMBPCTLF");
+                    read_only_mask = 0b0000_0011;
+                    write_only_mask = 0b0001_0000;
                 }
                 0xBA if ec.id == 0x5570 => debug!(" HOCTL2F"),
                 _ => panic!("xram unimplemented SMBUS register 0x{:02X}", offset)
@@ -858,6 +912,8 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                     debug!(" P80H81HS");
                     write_clear_mask = 0b0000_0001;
                 }
+                0x31 => debug!(" P80HDR"),
+                0x32 => debug!(" P81HDR"),
                 _ => panic!("xram unimplemented GCTRL register 0x{:02X}", offset)
             }
             debug!(")");
@@ -934,6 +990,17 @@ pub fn xram(ec: &Ec, address: u16, new_opt: Option<u8>) -> u8 {
                 }
                 0xA1 => debug!(" ESGCTRL1"),
                 0xA2 => debug!(" ESGCTRL2"),
+                0xA3 => debug!(" ESGCTRL3"),
+                0xB0 => debug!(" ESUCTRL0"),
+                0xB1 => debug!(" ESUCTRL1"),
+                0xB2 => debug!(" ESUCTRL2"),
+                0xB3 => debug!(" ESUCTRL3"),
+                0xB6 => debug!(" ESUCTRL6"),
+                0xB7 => debug!(" ESUCTRL7"),
+                0xB8 => debug!(" ESUCTRL8"),
+                0xC0 => debug!(" ESOCTRL0"),
+                0xC1 => debug!(" ESOCTRL1"),
+                0xC4 => debug!(" ESOCTRL4"),
                 // Virtual wire
                 0x190 => debug!(" VWCTRL0"),
                 _ => panic!("xram unimplemented eSPI register 0x{:02X}", offset)
